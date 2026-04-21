@@ -100,7 +100,14 @@ StandUpPhelo Team`;
             };
         }
 
-        const result = await response.json();
+        let result;
+        try {
+            result = await response.json();
+        } catch (parseErr) {
+            console.warn('Could not parse response as JSON:', parseErr);
+            result = { messageId: 'unknown' };
+        }
+
         console.log(`✓ Welcome email sent successfully to ${email}`, result);
 
         return {
