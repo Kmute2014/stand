@@ -1,14 +1,11 @@
-[build]
+﻿[build]
+  command = "rm -rf node_modules package-lock.json && npm install && npm run build"
   publish = "dist"
-  functions = "netlify/functions"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
 
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
-
-[functions]
-  directory = "netlify/functions"
