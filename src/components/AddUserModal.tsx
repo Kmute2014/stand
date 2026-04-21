@@ -67,10 +67,13 @@ export const AddUserModal: React.FC = () => {
         if (response.ok) {
           showToast(`${name} added successfully! Welcome email sent.`, 'green');
         } else {
+          const errorData = await response.json();
+          console.error('Email API error:', errorData);
           console.warn('Welcome email failed, but user was created');
-          showToast(`${name} added successfully! (Email sending failed)`, 'amber');
+          showToast(`${name} added successfully! (Email sending failed - check API key)`, 'amber');
         }
-      } catch (emailError) {
+      } catch (emailError: any) {
+        console.error('Welcome email error:', emailError.message);
         console.warn('Welcome email failed, but user was created:', emailError);
         showToast(`${name} added successfully! (Email sending failed)`, 'amber');
       }

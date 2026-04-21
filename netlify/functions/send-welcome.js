@@ -19,7 +19,7 @@ exports.handler = async (event, context) => {
         }
 
         const apiKey = process.env.BREVO_API_KEY;
-        const senderEmail = process.env.SENDER_EMAIL || "noreply@standupphelo.com";
+        const senderEmail = process.env.SENDER_EMAIL || "datrixhost@gmail.com";
 
         if (!apiKey) {
             console.error('BREVO_API_KEY not set');
