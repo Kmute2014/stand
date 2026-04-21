@@ -1,0 +1,1 @@
+{"functions":[{"bundler":"zisi","buildData":{"runtimeAPIVersion":1},"mainFile":"D:\\stand\\netlify\\functions\\send-welcome.js","name":"send-welcome","priority":10,"runtimeVersion":"nodejs24.x","path":"D:\\stand\\.netlify\\functions\\send-welcome.zip","runtime":"js"}],"system":{"arch":"x64","platform":"win32"},"timestamp":1776777503156,"version":1}
