@@ -50,32 +50,41 @@ export const AddUserModal: React.FC = () => {
         streak: 0,
       });
 
-      // Send welcome email via Netlify function
-      try {
-        const response = await fetch('/.netlify/functions/send-welcome', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name,
-            email,
-            role,
-          }),
-        });
+      // Send welcome email via Netlify function (only in production)
+      if (import.meta.env.PROD) {
+        try {
+          const response = await fetch('/.netlify/functions/send-welcome', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name,
+              email,
+              role,
+            }),
+          });
 
-        if (response.ok) {
-          showToast(`${name} added successfully! Welcome email sent.`, 'green');
-        } else {
-          const errorData = await response.json();
-          console.error('Email API error:', errorData);
-          console.warn('Welcome email failed, but user was created');
-          showToast(`${name} added successfully! (Email sending failed - check API key)`, 'amber');
+          if (response.ok) {
+            showToast(`${name} added successfully! Welcome email sent.`, 'green');
+          } else {
+            try {
+              const errorData = await response.json();
+              console.error('Email API error:', errorData);
+              const errorMsg = errorData.details || errorData.error || 'Unknown error';
+              showToast(`${name} added! Email failed: ${errorMsg}`, 'amber');
+            } catch (parseError) {
+              console.error('Failed to parse error response');
+              showToast(`${name} added! Email failed (check logs)`, 'amber');
+            }
+          }
+        } catch (emailError: any) {
+          console.error('Welcome email error:', emailError.message);
+          showToast(`${name} added! Email failed: ${emailError.message}`, 'amber');
         }
-      } catch (emailError: any) {
-        console.error('Welcome email error:', emailError.message);
-        console.warn('Welcome email failed, but user was created:', emailError);
-        showToast(`${name} added successfully! (Email sending failed)`, 'amber');
+      } else {
+        // Local development - skip email
+        showToast(`${name} added successfully! (Email disabled in dev)`, 'green');
       }
 
       setName('');
