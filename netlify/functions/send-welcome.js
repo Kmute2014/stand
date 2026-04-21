@@ -1,3 +1,108 @@
+exports.handler = async (event) => {
+    if (event.httpMethod !== 'POST') {
+        return {
+            statusCode: 405,
+            body: JSON.stringify({ error: 'Method not allowed' })
+        };
+    }
+
+    try {
+        const { name, email, role } = JSON.parse(event.body);
+
+        console.log('Received email request:', { name, email, role });
+
+        if (!name || !email || !role) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'Missing required fields' })
+            };
+        }
+
+        const apiKey = process.env.BREVO_API_KEY;
+        const senderEmail = process.env.SENDER_EMAIL || 'datrixhost@gmail.com';
+
+        if (!apiKey) {
+            console.error('BREVO_API_KEY environment variable not set');
+            return {
+                statusCode: 500,
+                body: JSON.stringify({
+                    error: 'Email service not configured',
+                    details: 'BREVO_API_KEY not set in environment variables'
+                })
+            };
+        }
+
+        const emailBody = `Welcome to StandUpPhelo, ${name.split(' ')[0]}!
+
+You've been added to the team standup system. Your role is: ${role}
+
+You can now log in and submit your daily standups at: https://yourdomain.com/standup
+
+Best regards,
+StandUpPhelo Team`;
+
+        const payload = {
+            sender: {
+                name: 'StandUpPhelo',
+                email: senderEmail
+            },
+            to: [{
+                email: email,
+                name: name
+            }],
+            subject: '👋 Welcome to StandUpPhelo!',
+            textContent: emailBody
+        };
+
+        console.log('Calling Brevo API with sender:', senderEmail);
+
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'api-key': apiKey,
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const responseText = await response.text();
+        console.log('Brevo response status:', response.status);
+        console.log('Brevo response body:', responseText);
+
+        if (!response.ok) {
+            console.error('Brevo API error:', responseText);
+            return {
+                statusCode: response.status,
+                body: JSON.stringify({
+                    error: 'Email send failed',
+                    details: responseText,
+                    apiStatus: response.status
+                })
+            };
+        }
+
+        console.log('Email sent successfully to:', email);
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify({
+                success: true,
+                message: `Welcome email sent to ${name}`
+            })
+        };
+
+    } catch (error) {
+        console.error('Function error:', error.message);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({
+                error: 'Function error',
+                details: error.message
+            })
+        };
+    }
+};
 exports.handler = async (event, context) => {
     // Only allow POST requests
     if (event.httpMethod !== 'POST') {
