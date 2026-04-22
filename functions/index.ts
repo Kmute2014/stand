@@ -107,3 +107,24 @@ export const sendStandupReminder = functions.https.onCall(
     }
   }
 );
+
+// --- GOAL 4: Generate Password Reset Link ---
+export const generatePasswordResetLink = functions.https.onCall(
+  { region: 'europe-west2' },
+  async (request) => {
+    try {
+      const { email } = request.data;
+
+      if (!email) {
+        throw new functions.https.HttpsError('invalid-argument', 'Email is required');
+      }
+
+      // Generate password reset link using Firebase Admin SDK
+      const resetLink = await admin.auth().generatePasswordResetLink(email);
+      return { success: true, resetLink };
+    } catch (error: any) {
+      console.error('Error generating password reset link:', error);
+      throw new functions.https.HttpsError('internal', `Failed to generate reset link: ${error.message}`);
+    }
+  }
+);

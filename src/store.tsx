@@ -91,7 +91,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             id: doc.id,
             name: d.name || '',
             email: d.email || '',
-            role: d.role || 'Member',
+            role: d.role || 'User',
             initials: d.initials || '',
             avatarColor: d.avatarColor || 'av-blue',
             status: d.status || 'Pending',
@@ -124,14 +124,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           if (userDocSnap.exists()) {
             // User exists in Firestore
             const userData = userDocSnap.data();
+            // Check if user is the admin email and not already an admin
+            const isAdminEmail = user.email === 'dsarkodie@datrixtechsolutions.com';
+            const userRole = isAdminEmail ? 'Admin' : (userData.role || 'User');
+
+            // Update role and status on login
+            const updateData: any = {};
+            if (isAdminEmail && userData.role !== 'Admin') {
+              updateData.role = 'Admin';
+            }
+            // Always set status to Active on login
+            if (userData.status !== 'Active') {
+              updateData.status = 'Active';
+            }
+
+            if (Object.keys(updateData).length > 0) {
+              try {
+                await updateDoc(userDocRef, updateData);
+              } catch (err) {
+                console.warn('Could not update user data:', err);
+              }
+            }
+
             setCurrentUser({
               id: user.uid,
               name: userData.name || user.displayName || 'User',
               email: user.email || '',
-              role: userData.role || 'Member',
+              role: userRole as any,
               initials: userData.initials || (userData.name || 'U').substring(0, 2).toUpperCase(),
               avatarColor: userData.avatarColor || 'av-blue',
-              status: userData.status || 'Pending',
+              status: 'Active',
               streak: userData.streak || 0
             });
           } else {
@@ -147,13 +169,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             const colors = ['av-blue', 'av-green', 'av-amber', 'av-teal', 'av-purple'];
             const avatarColor = colors[Math.floor(Math.random() * colors.length)];
 
+            // Check if this is the admin email
+            const isAdminEmail = user.email === 'dsarkodie@datrixtechsolutions.com';
+
             const newUser = {
               name: user.displayName || 'New User',
               email: user.email || '',
-              role: 'Member', // Default role - admin can upgrade
+              role: isAdminEmail ? 'Admin' : 'User', // Set as Admin if admin email, otherwise User
               initials,
               avatarColor,
-              status: 'Pending',
+              status: 'Active', // Set to Active on first login
               streak: 0,
               createdAt: new Date().toISOString(),
             };
@@ -175,7 +200,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               role: newUser.role,
               initials,
               avatarColor,
-              status: newUser.status,
+              status: 'Active',
               streak: newUser.streak,
             });
           }
@@ -374,21 +399,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const sendReminders = async () => {
+  const sendReminders = async (userIds?: string[]) => {
     try {
-      const sendReminderFunction = httpsCallable(functions, 'sendStandupReminder');
-      await sendReminderFunction({ message: 'Triggering standup reminders' });
+      // Call Netlify function to send reminders
+      const response = await fetch('/.netlify/functions/send-reminder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userIds: userIds || [],
+        }),
+      });
 
-      showToast('Reminders dispatched successfully.', 'green');
-      setNotifications(prev => [{
-        id: Date.now().toString(),
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'Manual',
-        text: `Reminder successfully sent by admin.`
-      }, ...prev]);
-    } catch (error) {
+      if (response.ok) {
+        const data = await response.json();
+        showToast(data.message || 'Reminders dispatched successfully.', 'green');
+        setNotifications(prev => [{
+          id: Date.now().toString(),
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'Manual',
+          text: `Reminders sent by admin.`
+        }, ...prev]);
+      } else {
+        const errorData = await response.json();
+        const errorMsg = errorData.details || errorData.error || 'Unknown error';
+        showToast(`Failed to send reminders: ${errorMsg}`, 'red');
+        console.error('Email API error:', errorData);
+      }
+    } catch (error: any) {
       console.error('Error sending reminders:', error);
-      showToast('Failed to send reminders.', 'red');
+      showToast(`Failed to send reminders: ${error.message}`, 'red');
     }
   };
 

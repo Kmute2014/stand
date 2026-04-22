@@ -98,7 +98,7 @@ export const Sidebar: React.FC = () => {
           </div>
           <div className="ml-auto flex items-center gap-1.5">
             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${isAdmin ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-700 text-slate-400'}`}>
-              {isAdmin ? 'Admin' : 'Member'}
+              {isAdmin ? 'Admin' : 'User'}
             </span>
             <button
               onClick={handleSignOut}

@@ -93,7 +93,7 @@ export const UsersPage: React.FC = () => {
                         <button className="btn btn-sm" onClick={() => setEditingUser(u)}>Edit</button>
                         <button className="btn btn-sm btn-danger" onClick={() => { if (window.confirm('Are you sure you want to delete this member?')) deleteUser(u.id); }}>Delete</button>
                         {(!u.lastStandup?.includes('Today') || u.status === 'Pending') && (
-                          <button className="btn btn-sm btn-warn" onClick={sendReminders}>Remind</button>
+                          <button className="btn btn-sm btn-warn" onClick={() => sendReminders([u.id])}>Remind</button>
                         )}
                       </div>
                     </td>

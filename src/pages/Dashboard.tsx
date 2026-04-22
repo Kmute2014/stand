@@ -122,7 +122,7 @@ export const Dashboard: React.FC = () => {
                         {uResp ? (
                           <button className="btn btn-sm btn-ghost">View</button>
                         ) : isAdmin ? (
-                          <button className="btn btn-sm btn-warn" onClick={sendReminders}>Remind</button>
+                          <button className="btn btn-sm btn-warn" onClick={() => sendReminders([u.id])}>Remind</button>
                         ) : (
                           <span className="text-[var(--text-3)] font-mono text-[11px]">—</span>
                         )}

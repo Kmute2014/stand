@@ -7,9 +7,9 @@ exports.handler = async (event) => {
     }
 
     try {
-        const { name, email, role } = JSON.parse(event.body);
+        const { name, email, role, resetLink } = JSON.parse(event.body);
 
-        console.log('Received email request:', { name, email, role });
+        console.log('Received email request:', { name, email, role, resetLink });
 
         if (!name || !email || !role) {
             return {
@@ -32,11 +32,23 @@ exports.handler = async (event) => {
             };
         }
 
-        const emailBody = `Welcome to StandUpPhelo, ${name.split(' ')[0]}!
+        // Build email body with password reset link if provided
+        let emailBody = `Welcome to StandUpPhelo, ${name.split(' ')[0]}!
 
 You've been added to the team standup system. Your role is: ${role}
 
-You can now log in and submit your daily standups at: https://standupphelo.netlify.app/
+You can now log in and submit your daily standups at: https://standupphelo.netlify.app/`;
+
+        if (resetLink) {
+            emailBody += `
+
+🔐 Reset Your Password:
+${resetLink}
+
+This link will help you set a secure password for your account.`;
+        }
+
+        emailBody += `
 
 Best regards,
 StandUpPhelo Team`;
