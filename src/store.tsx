@@ -325,8 +325,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       console.log(`Blocker reported: ${newResponse.blockers}`);
 
       // Send blocker notification to all admins
-      if (import.meta.env.PROD) {
-        fetch('/.netlify/functions/notify-blockers', {
+      try {
+        const response = await fetch('/.netlify/functions/notify-blockers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -334,10 +334,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             blockers: newResponse.blockers,
             userId: currentUser?.id
           })
-        })
-          .then(res => res.json())
-          .then(data => console.log('Blocker notification sent:', data))
-          .catch(err => console.error('Failed to send blocker notification:', err));
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Blocker notification sent:', data);
+        } else {
+          const errorData = await response.json();
+          console.error('Failed to send blocker notification:', errorData);
+        }
+      } catch (err) {
+        console.error('Error sending blocker notification:', err);
       }
 
       showToast('Standup submitted! Blocker detected — admins notified by email.', 'red');

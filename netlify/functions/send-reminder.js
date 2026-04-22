@@ -42,13 +42,16 @@ exports.handler = async (event) => {
                 usersToRemind = firestoreData.documents
                     .filter(doc => {
                         const fields = doc.fields;
-                        const status = fields && fields.status && fields.status.stringValue;
-                        // If specific userIds provided, filter by those, otherwise get all pending
+                        const email = fields && fields.email && fields.email.stringValue;
+
+                        // If specific userIds provided, filter by those with email
                         if (userIds && userIds.length > 0) {
                             const docId = doc.name.split('/').pop();
-                            return userIds.includes(docId) && fields.email;
+                            return userIds.includes(docId) && email;
                         }
-                        return status === 'Pending' && fields.email;
+
+                        // Send to all users with an email (regardless of status)
+                        return email;
                     })
                     .map(doc => ({
                         id: doc.name.split('/').pop(),
