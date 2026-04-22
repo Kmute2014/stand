@@ -2,7 +2,28 @@ import React from 'react';
 import { useAppContext } from '../store';
 
 export const UsersPage: React.FC = () => {
-  const { users, sendReminders, deleteUser, setEditingUser } = useAppContext();
+  const { users, sendReminders, deleteUser, setEditingUser, currentUser } = useAppContext();
+  const isAdmin = currentUser?.role === 'Admin';
+
+  if (!isAdmin) {
+    return (
+      <div className="page active">
+        <div className="ph">
+          <div className="ph-row">
+            <div>
+              <div className="ph-title">Team members</div>
+              <div className="ph-sub">// You don't have permission to manage users</div>
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-body p-6 text-center">
+            <p className="text-slate-500">Only administrators can manage team members.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page active">
@@ -75,7 +96,7 @@ export const UsersPage: React.FC = () => {
                   <td>
                     <div className="flex gap-1.5">
                       <button className="btn btn-sm" onClick={() => setEditingUser(u)}>Edit</button>
-                      <button className="btn btn-sm btn-danger" onClick={() => { if(window.confirm('Are you sure you want to delete this member?')) deleteUser(u.id); }}>Delete</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => { if (window.confirm('Are you sure you want to delete this member?')) deleteUser(u.id); }}>Delete</button>
                       {(!u.lastStandup?.includes('Today') || u.status === 'Pending') && (
                         <button className="btn btn-sm btn-warn" onClick={sendReminders}>Remind</button>
                       )}

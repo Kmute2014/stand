@@ -192,14 +192,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     showToast('User deleted.', 'red');
   };
 
-  const submitStandup = (responseParams: Omit<StandupResponse, 'id' | 'time'>) => {
-    // TODO: Add to Firestore
+  const submitStandup = async (responseParams: Omit<StandupResponse, 'id' | 'time'>) => {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const newResponse: StandupResponse = {
       ...responseParams,
       id: Date.now().toString(),
       time,
     };
+
+    // Save to Firestore
+    try {
+      const { collection, addDoc } = await import('firebase/firestore');
+      const responsesCollection = collection(db, 'responses');
+      await addDoc(responsesCollection, {
+        ...newResponse,
+        createdAt: new Date().toISOString()
+      });
+      console.log('Response saved to Firestore');
+    } catch (err) {
+      console.error('Error saving response to Firestore:', err);
+    }
 
     setResponses([newResponse, ...responses]);
 
@@ -237,8 +249,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setCurrentPage('dashboard');
   };
 
-  const updateResponse = (id: string, updates: Partial<StandupResponse>) => {
-    // TODO: Update in Firestore
+  const updateResponse = async (id: string, updates: Partial<StandupResponse>) => {
+    // Update in Firestore
+    try {
+      const { collection, query, where, getDocs, updateDoc } = await import('firebase/firestore');
+      const responsesCollection = collection(db, 'responses');
+      const q = query(responsesCollection, where('id', '==', id));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const docRef = querySnapshot.docs[0].ref;
+        await updateDoc(docRef, updates);
+        console.log('Response updated in Firestore');
+      }
+    } catch (err) {
+      console.error('Error updating response in Firestore:', err);
+    }
     setResponses(responses.map(r => r.id === id ? { ...r, ...updates } : r));
     showToast('Standup response updated!', 'green');
   };
@@ -255,8 +280,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     showToast('Company settings updated!', 'green');
   };
 
-  const deleteResponse = (id: string) => {
-    // TODO: Delete in Firestore
+  const deleteResponse = async (id: string) => {
+    // Delete from Firestore
+    try {
+      const { collection, query, where, getDocs, deleteDoc } = await import('firebase/firestore');
+      const responsesCollection = collection(db, 'responses');
+      const q = query(responsesCollection, where('id', '==', id));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const docRef = querySnapshot.docs[0].ref;
+        await deleteDoc(docRef);
+        console.log('Response deleted from Firestore');
+      }
+    } catch (err) {
+      console.error('Error deleting response from Firestore:', err);
+    }
     setResponses(responses.filter(r => r.id !== id));
     showToast('Response deleted.', 'amber');
   };

@@ -11,8 +11,6 @@ export const Sidebar: React.FC = () => {
     signOut(auth);
   };
 
-  const isAdmin = currentUser?.role === 'Admin';
-
   const navItems = [
     {
       group: 'Overview', items: [
@@ -21,12 +19,12 @@ export const Sidebar: React.FC = () => {
         { id: 'mood', label: 'Team Mood', icon: <Smile className="w-4 h-4 opacity-80 current-icon" /> },
       ]
     },
-    ...(isAdmin ? [{
+    {
       group: 'Admin', items: [
         { id: 'users', label: 'Users', icon: <Users className="w-4 h-4 opacity-80 current-icon" /> },
         { id: 'schedule', label: 'Schedule', icon: <Clock className="w-4 h-4 opacity-80 current-icon" />, badge: 'On', badgeType: 'green' },
       ]
-    }] : []),
+    },
     {
       group: 'My Standup', items: [
         { id: 'standup', label: 'Submit Today', icon: <Edit3 className="w-4 h-4 opacity-80 current-icon" /> },
