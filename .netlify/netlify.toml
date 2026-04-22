@@ -1,24 +1,18 @@
 functionsDirectory = "D:\\stand\\netlify\\functions"
-functionsDirectoryOrigin = "config"
+functionsDirectoryOrigin = "default"
 redirectsOrigin = "config"
 plugins = []
 headers = []
 
-[dev]
-  command = "npm run dev"
-  targetPort = 3001
-  port = 8888
-
-
 [build]
 publish = "D:\\stand\\dist"
 publishOrigin = "config"
-commandOrigin = "ui"
-command = "npm run build"
+commandOrigin = "config"
+command = "rm -rf node_modules package-lock.json && npm install && npm run build"
 functions = "D:\\stand\\netlify\\functions"
 
 [build.environment]
-NODE_VERSION = "18"
+NODE_VERSION = "20"
 
 [build.processing]
 
