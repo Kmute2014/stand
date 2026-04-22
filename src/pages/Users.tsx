@@ -20,7 +20,9 @@ export const UsersPage: React.FC = () => {
           </div>
           {isAdmin && (
             <div className="ph-actions">
-              <button className="btn btn-sm btn-warn" onClick={sendReminders}>Send all reminders</button>
+              <button className="btn btn-sm btn-warn" onClick={() => sendReminders()}>
+                Send all reminders
+              </button>
               <button className="btn btn-sm btn-primary" onClick={() => document.getElementById('modal-add-user')?.classList.add('show')}>+ Add member</button>
             </div>
           )}
