@@ -16,7 +16,7 @@ exports.handler = async (event) => {
         if (userIds && Array.isArray(userIds) && userIds.length > 0) {
             for (const id of userIds) {
                 // Construct direct URL to the user document
-                const docUrl = `https://firestore.googleapis.com/v1/projects/${firebaseProjectId}/databases/(default)/documents/users/${id}`;
+                const docUrl = `https://firestore.googleapis.com/v1/projects/${firebaseProjectId}/databases/documents/users/${id}`;
 
                 try {
                     const response = await fetch(docUrl);
