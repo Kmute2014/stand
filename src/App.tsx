@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Topbar } from './components/Topbar';
 import { useAppContext } from './store';
-import { auth } from './lib/firebase';
+import { auth, db } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
 // Importing Pages
@@ -21,15 +21,39 @@ import { EditResponseModal } from './components/EditResponseModal';
 import { Toast } from './components/Toast';
 
 export default function App() {
-  const { currentPage } = useAppContext();
+  const { currentPage, setCurrentPage } = useAppContext();
   const [user, setUser] = useState(auth.currentUser);
+  const [currentUserData, setCurrentUserData] = useState<any>(null);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, setUser);
+    return onAuthStateChanged(auth, async (authUser) => {
+      setUser(authUser);
+      if (authUser) {
+        try {
+          // Fetch user data to check role
+          const { doc, getDoc } = await import('firebase/firestore');
+          const userDocRef = doc(db, 'users', authUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+            setCurrentUserData(userDocSnap.data());
+          }
+        } catch (err) {
+          console.error('Error fetching user data:', err);
+        }
+      } else {
+        setCurrentUserData(null);
+      }
+    });
   }, []);
 
   if (!user) {
     return <AuthPage />;
+  }
+
+  // Protect admin pages - redirect non-admins away from users/schedule pages
+  const isAdmin = currentUserData?.role === 'Admin';
+  if ((currentPage === 'users' || currentPage === 'schedule') && !isAdmin) {
+    setCurrentPage('dashboard');
   }
 
   return (

@@ -47,21 +47,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     name: 'My Company',
     logo: null,
   });
-  
+
   const [toastConfig, setToastConfig] = useState<{ msg: string; type: string; visible: boolean } | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editingResponse, setEditingResponse] = useState<StandupResponse | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, (user) => {
+    return onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // TODO: Fetch user from Firestore
-        setCurrentUser({ 
-          id: '5', name: user.displayName || 'User', email: user.email || '', role: 'Admin', initials: 'U', avatarColor: 'av-blue', status: 'Active', streak: 0 
-        });
-        
-        // TODO: Load real data from Firestore here instead of mock data
+        try {
+          // Fetch user from Firestore to verify they were added by admin
+          const { doc, getDoc } = await import('firebase/firestore');
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            setCurrentUser({
+              id: user.uid,
+              name: userData.name || user.displayName || 'User',
+              email: user.email || '',
+              role: userData.role || 'Member',
+              initials: userData.initials || (userData.name || 'U').substring(0, 2).toUpperCase(),
+              avatarColor: userData.avatarColor || 'av-blue',
+              status: userData.status || 'Pending',
+              streak: userData.streak || 0
+            });
+          } else {
+            // User authenticated but not in users collection - sign them out
+            console.warn('User not found in database. Please ask admin to add you.');
+            const { signOut } = await import('firebase/auth');
+            await signOut(auth);
+            setCurrentUser(null);
+          }
+        } catch (err) {
+          console.error('Error fetching user data:', err);
+          setCurrentUser(null);
+        }
       } else {
         setCurrentUser(null);
         setUsers([]);
@@ -82,7 +105,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       if (schedule.activeDays.includes(currentDay) && currentTime === schedule.time) {
         // Check if already sent today
-        const alreadySent = notifications.some(n => 
+        const alreadySent = notifications.some(n =>
           n.type === 'Auto' && n.text.includes(now.toLocaleDateString())
         );
 
@@ -137,25 +160,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       id: Date.now().toString(),
       time,
     };
-    
+
     setResponses([newResponse, ...responses]);
-    
+
     if (newResponse.blockers.toLowerCase() !== 'no') {
-      showToast('Standup submitted! Blocker detected — admin notified by email.', 'red');
-      
-      console.log(`Triggering blocker email to admin... Details: ${newResponse.blockers}`);
-      // Note: In a production app, this would trigger a Firebase Cloud Function to send the email securely
-      
+      console.log(`Blocker reported: ${newResponse.blockers}`);
+
+      // Send blocker notification to all admins
+      if (import.meta.env.PROD) {
+        fetch('/.netlify/functions/notify-blockers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userName: currentUser?.name || 'Unknown',
+            blockers: newResponse.blockers,
+            userId: currentUser?.id
+          })
+        })
+          .then(res => res.json())
+          .then(data => console.log('Blocker notification sent:', data))
+          .catch(err => console.error('Failed to send blocker notification:', err));
+      }
+
+      showToast('Standup submitted! Blocker detected — admins notified by email.', 'red');
+
       setNotifications(prev => [{
         id: Date.now().toString(),
         time,
         type: 'Alert',
-        text: `Blocker alert sent to admin — ${currentUser?.name} reported a blocker.`
+        text: `Blocker alert sent to all admins — ${currentUser?.name} reported a blocker.`
       }, ...prev]);
     } else {
       showToast('Standup submitted successfully! Team notified.', 'green');
     }
-    
+
     setCurrentPage('dashboard');
   };
 
@@ -187,7 +225,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const sendReminderFunction = httpsCallable(functions, 'sendStandupReminder');
       await sendReminderFunction({ message: 'Triggering standup reminders' });
-      
+
       showToast('Reminders dispatched successfully.', 'green');
       setNotifications(prev => [{
         id: Date.now().toString(),

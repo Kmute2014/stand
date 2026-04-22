@@ -11,23 +11,33 @@ export const Sidebar: React.FC = () => {
     signOut(auth);
   };
 
+  const isAdmin = currentUser?.role === 'Admin';
+
   const navItems = [
-    { group: 'Overview', items: [
-      { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4 opacity-80 current-icon" /> },
-      { id: 'responses', label: 'Responses', icon: <MessageSquare className="w-4 h-4 opacity-80 current-icon" />, badge: '3' },
-      { id: 'mood', label: 'Team Mood', icon: <Smile className="w-4 h-4 opacity-80 current-icon" /> },
-    ]},
-    { group: 'Admin', items: [
-      { id: 'users', label: 'Users', icon: <Users className="w-4 h-4 opacity-80 current-icon" /> },
-      { id: 'schedule', label: 'Schedule', icon: <Clock className="w-4 h-4 opacity-80 current-icon" />, badge: 'On', badgeType: 'green' },
-    ]},
-    { group: 'My Standup', items: [
-      { id: 'standup', label: 'Submit Today', icon: <Edit3 className="w-4 h-4 opacity-80 current-icon" /> },
-      { id: 'myhistory', label: 'My History', icon: <History className="w-4 h-4 opacity-80 current-icon" /> },
-    ]},
-    { group: 'Settings', items: [
-      { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4 opacity-80 current-icon" /> },
-    ]},
+    {
+      group: 'Overview', items: [
+        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4 opacity-80 current-icon" /> },
+        { id: 'responses', label: 'Responses', icon: <MessageSquare className="w-4 h-4 opacity-80 current-icon" />, badge: '3' },
+        { id: 'mood', label: 'Team Mood', icon: <Smile className="w-4 h-4 opacity-80 current-icon" /> },
+      ]
+    },
+    ...(isAdmin ? [{
+      group: 'Admin', items: [
+        { id: 'users', label: 'Users', icon: <Users className="w-4 h-4 opacity-80 current-icon" /> },
+        { id: 'schedule', label: 'Schedule', icon: <Clock className="w-4 h-4 opacity-80 current-icon" />, badge: 'On', badgeType: 'green' },
+      ]
+    }] : []),
+    {
+      group: 'My Standup', items: [
+        { id: 'standup', label: 'Submit Today', icon: <Edit3 className="w-4 h-4 opacity-80 current-icon" /> },
+        { id: 'myhistory', label: 'My History', icon: <History className="w-4 h-4 opacity-80 current-icon" /> },
+      ]
+    },
+    {
+      group: 'Settings', items: [
+        { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4 opacity-80 current-icon" /> },
+      ]
+    },
   ];
 
   return (
@@ -50,8 +60,8 @@ export const Sidebar: React.FC = () => {
             {group.items.map(item => {
               const isActive = currentPage === item.id;
               return (
-                <div 
-                  key={item.id} 
+                <div
+                  key={item.id}
                   onClick={() => setCurrentPage(item.id)}
                   className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors mb-1 ${isActive ? 'bg-blue-600 text-white font-medium' : 'text-slate-400 hover:bg-slate-800'}`}
                 >
@@ -80,7 +90,7 @@ export const Sidebar: React.FC = () => {
             <p className="text-sm font-medium truncate text-white">{currentUser?.name || ''}</p>
             <p className="text-xs text-slate-500 truncate">{currentUser?.email || ''}</p>
           </div>
-          <button 
+          <button
             onClick={handleSignOut}
             className="ml-auto w-8 h-8 rounded-full hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
             title="Sign out"
