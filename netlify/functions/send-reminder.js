@@ -7,7 +7,7 @@ exports.handler = async (event) => {
     }
 
     try {
-        const { userIds } = JSON.parse(event.body);
+        const { userIds } = JSON.parse(event.body || '{}');
 
         console.log('Reminder request:', { userIds });
 
@@ -26,8 +26,8 @@ exports.handler = async (event) => {
             };
         }
 
-        // Query Firestore for users with 'Pending' status
-        console.log('Querying Firestore for pending users...');
+        // Query Firestore for users with 'Active' status
+        console.log('Querying Firestore for active users...');
 
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${firebaseProjectId}/databases/(default)/documents/users`;
         const query = `?pageSize=100`;
@@ -41,21 +41,25 @@ exports.handler = async (event) => {
             if (firestoreData.documents) {
                 usersToRemind = firestoreData.documents
                     .filter(doc => {
-                        const fields = doc.fields;
-                        const email = fields && fields.email && fields.email.stringValue;
+                        const fields = doc.fields || {};
+                        const email = fields.email?.stringValue;
+                        const status = fields.status?.stringValue;
 
-                        // If specific userIds provided, filter by those with email
-                        if (userIds && userIds.length > 0) {
+                        // Only include users where status is exactly 'Active'
+                        const isActive = (status === 'Active');
+
+                        // If specific userIds provided, filter by those who are also Active
+                        if (userIds && Array.isArray(userIds) && userIds.length > 0) {
                             const docId = doc.name.split('/').pop();
-                            return userIds.includes(docId) && email;
+                            return userIds.includes(docId) && email && isActive;
                         }
 
-                        // Send to all users with an email (regardless of status)
-                        return email;
+                        // Send to all users with an email who have 'Active' status
+                        return email && isActive;
                     })
                     .map(doc => ({
                         id: doc.name.split('/').pop(),
-                        email: doc.fields.email?.stringValue || '',
+                        email: doc.fields.email.stringValue,
                         name: doc.fields.name?.stringValue || 'Team Member'
                     }));
             }
@@ -75,17 +79,17 @@ exports.handler = async (event) => {
                 statusCode: 200,
                 body: JSON.stringify({
                     success: true,
-                    message: 'No users to remind'
+                    message: 'No active users to remind'
                 })
             };
         }
 
-        console.log(`Found ${usersToRemind.length} user(s) to remind:`, usersToRemind.map(u => u.email));
+        console.log(`Found ${usersToRemind.length} active user(s) to remind:`, usersToRemind.map(u => u.email));
 
         let emailsSent = 0;
         const errors = [];
 
-        // Send reminder to each user
+        // Send reminder to each active user
         for (const user of usersToRemind) {
             if (!user.email) continue;
 
@@ -142,13 +146,13 @@ StandUpPhelo Team`;
             }
         }
 
-        console.log(`Reminders sent to ${emailsSent} user(s)`);
+        console.log(`Reminders sent to ${emailsSent} active user(s)`);
 
         return {
             statusCode: 200,
             body: JSON.stringify({
                 success: true,
-                message: `Reminders sent to ${emailsSent} user(s)`,
+                message: `Reminders sent to ${emailsSent} active user(s)`,
                 errors: errors.length > 0 ? errors : undefined
             })
         };
