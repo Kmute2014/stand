@@ -159,7 +159,7 @@ exports.handler = async (event, context) => {
 
 You've been added to the team standup system. Your role is: ${role}
 
-You can now log in and submit your daily standups at: https://yourdomain.com/standup
+You can now log in and submit your daily standups at: https://standupphelo.netlify.app/
 
 Key features:
 - Daily standup submissions (What you did, what you'll do, any blockers)
