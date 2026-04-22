@@ -1,4 +1,4 @@
-export type Role = 'Admin' | 'Member';
+export type Role = 'Admin' | 'User';
 
 export type Mood = {
   score: number;
