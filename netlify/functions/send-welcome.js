@@ -36,7 +36,7 @@ exports.handler = async (event) => {
 
 You've been added to the team standup system. Your role is: ${role}
 
-You can now log in and submit your daily standups at: https://yourdomain.com/standup
+You can now log in and submit your daily standups at: https://standupphelo.netlify.app/
 
 Best regards,
 StandUpPhelo Team`;

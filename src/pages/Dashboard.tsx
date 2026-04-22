@@ -4,10 +4,12 @@ import { CheckCircle2, CircleDashed, AlertTriangle, Smile } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { currentUser, responses, users, sendReminders } = useAppContext();
-  
+  const isAdmin = currentUser?.role === 'Admin';
+
+  const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   const pendingUsers = users.filter(u => u.status === 'Active' && !u.lastStandup?.includes('Today'));
-  const activeBlockers = responses.filter(r => r.blockers.toLowerCase() !== 'no' && r.date === 'Apr 20');
-  
+  const activeBlockers = responses.filter(r => r.blockers.toLowerCase() !== 'no' && r.date === today);
+
   // Calculate average mood
   const moodSum = responses.reduce((acc, curr) => acc + curr.mood.score, 0);
   const avgMood = responses.length > 0 ? (moodSum / responses.length).toFixed(1) : '—';
@@ -66,7 +68,7 @@ export const Dashboard: React.FC = () => {
               <CheckCircle2 className="w-4 h-4 text-[var(--text-3)]" />
               Today's submissions
             </span>
-            <span className="badge b-neutral">Apr 20</span>
+            <span className="badge b-neutral">{today}</span>
           </div>
           <div className="card-body-0 overflow-x-auto">
             <table className="tbl min-w-full">
@@ -119,8 +121,10 @@ export const Dashboard: React.FC = () => {
                       <td>
                         {uResp ? (
                           <button className="btn btn-sm btn-ghost">View</button>
-                        ) : (
+                        ) : isAdmin ? (
                           <button className="btn btn-sm btn-warn" onClick={sendReminders}>Remind</button>
+                        ) : (
+                          <span className="text-[var(--text-3)] font-mono text-[11px]">—</span>
                         )}
                       </td>
                     </tr>
@@ -163,7 +167,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* AI Summary Fake Visual */}
       <div className="mt-4 bg-gradient-to-br from-[rgba(79,142,255,0.06)] to-[rgba(45,212,191,0.04)] border border-[rgba(79,142,255,0.15)] rounded-[var(--radius-lg)] p-5 relative overflow-hidden">
         <div className="text-[10px] font-medium tracking-widest uppercase text-[var(--accent)] flex items-center gap-1.5 mb-3.5">
@@ -171,20 +175,20 @@ export const Dashboard: React.FC = () => {
           AI standup summary — generated 10:00 AM
         </div>
         <div className="grid grid-cols-3 gap-5">
-           <div>
-             <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--green)] mb-1.5">✦ Wins</div>
-             <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>Efua shipped the full auth flow ahead of schedule</div>
-             <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>Ama connected dashboard analytics</div>
-           </div>
-           <div>
-             <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--red)] mb-1.5">⚠ Risks</div>
-             <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>{activeBlockers.length} blockers may delay API integration</div>
-             <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>{pendingUsers.length} members yet to submit</div>
-           </div>
-           <div>
-             <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--accent)] mb-1.5">→ Priorities</div>
-             <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>Resolve infra API credentials urgently today</div>
-           </div>
+          <div>
+            <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--green)] mb-1.5">✦ Wins</div>
+            <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>Efua shipped the full auth flow ahead of schedule</div>
+            <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>Ama connected dashboard analytics</div>
+          </div>
+          <div>
+            <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--red)] mb-1.5">⚠ Risks</div>
+            <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>{activeBlockers.length} blockers may delay API integration</div>
+            <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>{pendingUsers.length} members yet to submit</div>
+          </div>
+          <div>
+            <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--accent)] mb-1.5">→ Priorities</div>
+            <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>Resolve infra API credentials urgently today</div>
+          </div>
         </div>
       </div>
 
@@ -193,5 +197,5 @@ export const Dashboard: React.FC = () => {
 };
 
 const SparklesIcon = (props: any) => (
-  <svg viewBox="0 0 16 16" fill="currentColor" {...props}><path d="M8 1l1.5 4.5H14l-3.5 2.5 1.5 4.5L8 10l-4 2.5 1.5-4.5L2 5.5h4.5L8 1z"/></svg>
+  <svg viewBox="0 0 16 16" fill="currentColor" {...props}><path d="M8 1l1.5 4.5H14l-3.5 2.5 1.5 4.5L8 10l-4 2.5 1.5-4.5L2 5.5h4.5L8 1z" /></svg>
 );

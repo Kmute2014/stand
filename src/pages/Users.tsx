@@ -1,29 +1,10 @@
 import React from 'react';
 import { useAppContext } from '../store';
+import { Lock } from 'lucide-react';
 
 export const UsersPage: React.FC = () => {
   const { users, sendReminders, deleteUser, setEditingUser, currentUser } = useAppContext();
   const isAdmin = currentUser?.role === 'Admin';
-
-  if (!isAdmin) {
-    return (
-      <div className="page active">
-        <div className="ph">
-          <div className="ph-row">
-            <div>
-              <div className="ph-title">Team members</div>
-              <div className="ph-sub">// You don't have permission to manage users</div>
-            </div>
-          </div>
-        </div>
-        <div className="card">
-          <div className="card-body p-6 text-center">
-            <p className="text-slate-500">Only administrators can manage team members.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="page active">
@@ -31,14 +12,27 @@ export const UsersPage: React.FC = () => {
         <div className="ph-row">
           <div>
             <div className="ph-title">Team members</div>
-            <div className="ph-sub">// manage users · permissions · email settings · streaks</div>
+            <div className="ph-sub">
+              {isAdmin
+                ? '// manage users · permissions · email settings · streaks'
+                : '// view team · streaks · mood · standup history'}
+            </div>
           </div>
-          <div className="ph-actions">
-            <button className="btn btn-sm btn-warn" onClick={sendReminders}>Send all reminders</button>
-            <button className="btn btn-sm btn-primary" onClick={() => document.getElementById('modal-add-user')?.classList.add('show')}>+ Add member</button>
-          </div>
+          {isAdmin && (
+            <div className="ph-actions">
+              <button className="btn btn-sm btn-warn" onClick={sendReminders}>Send all reminders</button>
+              <button className="btn btn-sm btn-primary" onClick={() => document.getElementById('modal-add-user')?.classList.add('show')}>+ Add member</button>
+            </div>
+          )}
         </div>
       </div>
+
+      {!isAdmin && (
+        <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-[12px] font-medium">
+          <Lock className="w-3.5 h-3.5 shrink-0" />
+          You're viewing team members in read-only mode. Contact an admin to make changes.
+        </div>
+      )}
 
       <div className="card">
         <div className="card-body-0 overflow-x-auto">
@@ -51,7 +45,7 @@ export const UsersPage: React.FC = () => {
                 <th>Streak</th>
                 <th>Last standup</th>
                 <th>Mood</th>
-                <th>Actions</th>
+                {isAdmin && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -93,15 +87,17 @@ export const UsersPage: React.FC = () => {
                       <span className="text-[var(--text-3)]">—</span>
                     )}
                   </td>
-                  <td>
-                    <div className="flex gap-1.5">
-                      <button className="btn btn-sm" onClick={() => setEditingUser(u)}>Edit</button>
-                      <button className="btn btn-sm btn-danger" onClick={() => { if (window.confirm('Are you sure you want to delete this member?')) deleteUser(u.id); }}>Delete</button>
-                      {(!u.lastStandup?.includes('Today') || u.status === 'Pending') && (
-                        <button className="btn btn-sm btn-warn" onClick={sendReminders}>Remind</button>
-                      )}
-                    </div>
-                  </td>
+                  {isAdmin && (
+                    <td>
+                      <div className="flex gap-1.5">
+                        <button className="btn btn-sm" onClick={() => setEditingUser(u)}>Edit</button>
+                        <button className="btn btn-sm btn-danger" onClick={() => { if (window.confirm('Are you sure you want to delete this member?')) deleteUser(u.id); }}>Delete</button>
+                        {(!u.lastStandup?.includes('Today') || u.status === 'Pending') && (
+                          <button className="btn btn-sm btn-warn" onClick={sendReminders}>Remind</button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

@@ -1,17 +1,16 @@
 import React from 'react';
 import { useAppContext } from '../store';
-import { LayoutDashboard, MessageSquare, Smile, Users, Clock, Edit3, History, LogOut, Settings } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Smile, Users, Clock, Edit3, History, LogOut, Settings, Lock } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 
 export const Sidebar: React.FC = () => {
   const { currentPage, setCurrentPage, currentUser } = useAppContext();
+  const isAdmin = currentUser?.role === 'Admin';
 
   const handleSignOut = () => {
     signOut(auth);
   };
-
-  const isAdmin = currentUser?.role === 'Admin';
 
   const navItems = [
     {
@@ -21,12 +20,12 @@ export const Sidebar: React.FC = () => {
         { id: 'mood', label: 'Team Mood', icon: <Smile className="w-4 h-4 opacity-80 current-icon" /> },
       ]
     },
-    ...(isAdmin ? [{
+    {
       group: 'Admin', items: [
-        { id: 'users', label: 'Users', icon: <Users className="w-4 h-4 opacity-80 current-icon" /> },
-        { id: 'schedule', label: 'Schedule', icon: <Clock className="w-4 h-4 opacity-80 current-icon" />, badge: 'On', badgeType: 'green' },
+        { id: 'users', label: 'Users', icon: <Users className="w-4 h-4 opacity-80 current-icon" />, adminOnly: true },
+        { id: 'schedule', label: 'Schedule', icon: <Clock className="w-4 h-4 opacity-80 current-icon" />, badge: 'On', badgeType: 'green', adminOnly: true },
       ]
-    }] : []),
+    },
 
     {
       group: 'My Standup', items: [
@@ -60,17 +59,21 @@ export const Sidebar: React.FC = () => {
             <div className="text-[10px] font-bold tracking-widest uppercase text-slate-500 px-3 mb-2">{group.group}</div>
             {group.items.map(item => {
               const isActive = currentPage === item.id;
+              const isLocked = (item as any).adminOnly && !isAdmin;
               return (
                 <div
                   key={item.id}
                   onClick={() => setCurrentPage(item.id)}
-                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors mb-1 ${isActive ? 'bg-blue-600 text-white font-medium' : 'text-slate-400 hover:bg-slate-800'}`}
+                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors mb-1 ${isActive ? 'bg-blue-600 text-white font-medium' : isLocked ? 'text-slate-600 hover:bg-slate-800/50' : 'text-slate-400 hover:bg-slate-800'}`}
                 >
-                  <div className={`${isActive ? 'opacity-80' : 'opacity-60'}`}>
+                  <div className={`${isActive ? 'opacity-80' : isLocked ? 'opacity-30' : 'opacity-60'}`}>
                     {item.icon}
                   </div>
-                  <span>{item.label}</span>
-                  {item.badge && (
+                  <span className={isLocked ? 'opacity-40' : ''}>{item.label}</span>
+                  {isLocked && (
+                    <Lock className="w-3 h-3 ml-auto text-slate-600 opacity-60" />
+                  )}
+                  {!isLocked && item.badge && (
                     <span className={`ml-auto font-bold text-[10px] px-2 py-0.5 rounded ${item.badgeType === 'green' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
                       {item.badge}
                     </span>
@@ -89,15 +92,22 @@ export const Sidebar: React.FC = () => {
           </div>
           <div className="overflow-hidden">
             <p className="text-sm font-medium truncate text-white">{currentUser?.name || ''}</p>
-            <p className="text-xs text-slate-500 truncate">{currentUser?.email || ''}</p>
+            <p className="text-xs text-slate-500 truncate flex items-center gap-1.5">
+              {currentUser?.email || ''}
+            </p>
           </div>
-          <button
-            onClick={handleSignOut}
-            className="ml-auto w-8 h-8 rounded-full hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
-            title="Sign out"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+          <div className="ml-auto flex items-center gap-1.5">
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${isAdmin ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-700 text-slate-400'}`}>
+              {isAdmin ? 'Admin' : 'Member'}
+            </span>
+            <button
+              onClick={handleSignOut}
+              className="w-8 h-8 rounded-full hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </nav>

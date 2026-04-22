@@ -53,6 +53,65 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [editingResponse, setEditingResponse] = useState<StandupResponse | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
+  // Real-time listener for responses collection
+  useEffect(() => {
+    if (!currentUser) return;
+    let unsubResponses: (() => void) | undefined;
+    let unsubUsers: (() => void) | undefined;
+
+    const setupListeners = async () => {
+      const { collection, onSnapshot, orderBy, query } = await import('firebase/firestore');
+
+      // Listen to responses
+      const responsesRef = collection(db, 'responses');
+      const responsesQuery = query(responsesRef, orderBy('createdAt', 'desc'));
+      unsubResponses = onSnapshot(responsesQuery, (snapshot) => {
+        const data = snapshot.docs.map(doc => {
+          const d = doc.data();
+          return {
+            id: doc.id,
+            userId: d.userId,
+            date: d.date,
+            time: d.time,
+            yesterday: d.yesterday,
+            today: d.today,
+            blockers: d.blockers,
+            mood: d.mood,
+          } as StandupResponse;
+        });
+        setResponses(data);
+      }, (err) => console.error('Responses listener error:', err));
+
+      // Listen to users collection (for team mood & user list)
+      const usersRef = collection(db, 'users');
+      unsubUsers = onSnapshot(usersRef, (snapshot) => {
+        const data = snapshot.docs.map(doc => {
+          const d = doc.data();
+          return {
+            id: doc.id,
+            name: d.name || '',
+            email: d.email || '',
+            role: d.role || 'Member',
+            initials: d.initials || '',
+            avatarColor: d.avatarColor || 'av-blue',
+            status: d.status || 'Pending',
+            streak: d.streak || 0,
+            lastStandup: d.lastStandup,
+            currentMood: d.currentMood,
+          } as User;
+        });
+        setUsers(data);
+      }, (err) => console.error('Users listener error:', err));
+    };
+
+    setupListeners();
+
+    return () => {
+      unsubResponses?.();
+      unsubUsers?.();
+    };
+  }, [currentUser?.id]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -174,22 +233,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const addUser = (newUser: Omit<User, 'id'>) => {
-    // TODO: Add to Firestore
-    const user: User = { ...newUser, id: Date.now().toString() };
-    setUsers([...users, user]);
+    // Users are added to Firestore in AddUserModal directly; real-time listener handles state update
     showToast('New member added and welcome email sent!', 'green');
   };
 
-  const updateUser = (id: string, updates: Partial<User>) => {
-    // TODO: Update in Firestore
-    setUsers(users.map(u => u.id === id ? { ...u, ...updates } : u));
-    showToast('User updated successfully!', 'green');
+  const updateUser = async (id: string, updates: Partial<User>) => {
+    try {
+      const { doc, updateDoc } = await import('firebase/firestore');
+      await updateDoc(doc(db, 'users', id), updates as Record<string, unknown>);
+      showToast('User updated successfully!', 'green');
+    } catch (err) {
+      console.error('Error updating user in Firestore:', err);
+      showToast('Failed to update user.', 'red');
+    }
   };
 
-  const deleteUser = (id: string) => {
-    // TODO: Delete in Firestore
-    setUsers(users.filter(u => u.id !== id));
-    showToast('User deleted.', 'red');
+  const deleteUser = async (id: string) => {
+    try {
+      const { doc, deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, 'users', id));
+      showToast('User deleted.', 'red');
+    } catch (err) {
+      console.error('Error deleting user from Firestore:', err);
+      showToast('Failed to delete user.', 'red');
+    }
   };
 
   const submitStandup = async (responseParams: Omit<StandupResponse, 'id' | 'time'>) => {
@@ -202,18 +269,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     // Save to Firestore
     try {
-      const { collection, addDoc } = await import('firebase/firestore');
+      const { collection, addDoc, doc, updateDoc } = await import('firebase/firestore');
       const responsesCollection = collection(db, 'responses');
-      await addDoc(responsesCollection, {
-        ...newResponse,
-        createdAt: new Date().toISOString()
+      const docRef = await addDoc(responsesCollection, {
+        userId: newResponse.userId,
+        date: newResponse.date,
+        time: newResponse.time,
+        yesterday: newResponse.yesterday,
+        today: newResponse.today,
+        blockers: newResponse.blockers,
+        mood: newResponse.mood,
+        createdAt: new Date().toISOString(),
       });
+      // Update the id to match Firestore doc id
+      newResponse.id = docRef.id;
+
+      // Also update user's currentMood and lastStandup
+      if (currentUser) {
+        await updateDoc(doc(db, 'users', currentUser.id), {
+          currentMood: newResponse.mood,
+          lastStandup: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+        });
+      }
       console.log('Response saved to Firestore');
     } catch (err) {
       console.error('Error saving response to Firestore:', err);
     }
-
-    setResponses([newResponse, ...responses]);
 
     if (newResponse.blockers.toLowerCase() !== 'no') {
       console.log(`Blocker reported: ${newResponse.blockers}`);
@@ -250,53 +331,47 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const updateResponse = async (id: string, updates: Partial<StandupResponse>) => {
-    // Update in Firestore
     try {
-      const { collection, query, where, getDocs, updateDoc } = await import('firebase/firestore');
-      const responsesCollection = collection(db, 'responses');
-      const q = query(responsesCollection, where('id', '==', id));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        const docRef = querySnapshot.docs[0].ref;
-        await updateDoc(docRef, updates);
-        console.log('Response updated in Firestore');
-      }
+      const { doc, updateDoc } = await import('firebase/firestore');
+      await updateDoc(doc(db, 'responses', id), updates as Record<string, unknown>);
+      showToast('Standup response updated!', 'green');
     } catch (err) {
       console.error('Error updating response in Firestore:', err);
+      showToast('Failed to update response.', 'red');
     }
-    setResponses(responses.map(r => r.id === id ? { ...r, ...updates } : r));
-    showToast('Standup response updated!', 'green');
   };
 
-  const updateSchedule = (newSchedule: Schedule) => {
-    // TODO: Update in Firestore
+  const updateSchedule = async (newSchedule: Schedule) => {
     setSchedule(newSchedule);
+    try {
+      const { doc, setDoc } = await import('firebase/firestore');
+      await setDoc(doc(db, 'settings', 'schedule'), newSchedule);
+    } catch (err) {
+      console.error('Error saving schedule:', err);
+    }
     showToast('Schedule settings saved successfully.', 'green');
   };
 
-  const updateCompanySettings = (settings: CompanySettings) => {
-    // TODO: Update in Firestore
+  const updateCompanySettings = async (settings: CompanySettings) => {
     setCompanySettings(settings);
+    try {
+      const { doc, setDoc } = await import('firebase/firestore');
+      await setDoc(doc(db, 'settings', 'company'), settings);
+    } catch (err) {
+      console.error('Error saving company settings:', err);
+    }
     showToast('Company settings updated!', 'green');
   };
 
   const deleteResponse = async (id: string) => {
-    // Delete from Firestore
     try {
-      const { collection, query, where, getDocs, deleteDoc } = await import('firebase/firestore');
-      const responsesCollection = collection(db, 'responses');
-      const q = query(responsesCollection, where('id', '==', id));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        const docRef = querySnapshot.docs[0].ref;
-        await deleteDoc(docRef);
-        console.log('Response deleted from Firestore');
-      }
+      const { doc, deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, 'responses', id));
+      showToast('Response deleted.', 'amber');
     } catch (err) {
       console.error('Error deleting response from Firestore:', err);
+      showToast('Failed to delete response.', 'red');
     }
-    setResponses(responses.filter(r => r.id !== id));
-    showToast('Response deleted.', 'amber');
   };
 
   const sendReminders = async () => {
