@@ -1,6 +1,7 @@
 exports.handler = async (event) => {
-    // --- 1. CONFIGURATION ---
+    // 1. CONFIGURATION - DOUBLE CHECK THESE
     const FIREBASE_PROJECT_ID = 'gen-lang-client-0352188065';
+    const COLLECTION_NAME = 'users'; // Change to 'Users' if your folder is capitalized
     const SENDER_EMAIL = process.env.SENDER_EMAIL || 'datrixhost@gmail.com';
     const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
@@ -10,40 +11,39 @@ exports.handler = async (event) => {
 
     try {
         const { userIds } = JSON.parse(event.body || '{}');
-        console.log(`Targeting project: ${FIREBASE_PROJECT_ID}`);
+        console.log(`Searching for IDs: ${userIds} in Project: ${FIREBASE_PROJECT_ID}`);
 
         let usersToRemind = [];
 
         if (userIds && Array.isArray(userIds)) {
             for (const id of userIds) {
-                // Direct URL to the user document
-                const docUrl = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${id}`;
+                // Constructing the URL
+                const docUrl = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${COLLECTION_NAME}/${id}`;
 
-                console.log(`Fetching: ${docUrl}`);
+                console.log(`Requesting URL: ${docUrl}`);
 
                 const response = await fetch(docUrl);
-                const responseText = await response.text(); // Get as text first to avoid JSON crash
 
-                try {
-                    const data = JSON.parse(responseText);
+                // If the response is not OK (404, 403, etc)
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`FIREBASE ERROR: Received status ${response.status}`);
+                    console.error(`ERROR DETAIL: ${errorText.substring(0, 200)}`);
+                    continue; // Skip to next ID
+                }
 
-                    if (response.ok && data.fields) {
-                        const email = data.fields.email?.stringValue;
-                        const status = data.fields.status?.stringValue;
-                        const name = data.fields.name?.stringValue || 'Team Member';
+                const data = await response.json();
 
-                        console.log(`Found User: ${email} | Status: ${status}`);
+                if (data.fields) {
+                    const email = data.fields.email?.stringValue;
+                    const status = data.fields.status?.stringValue;
+                    const name = data.fields.name?.stringValue || 'Team Member';
 
-                        if (email && status === "Active") {
-                            usersToRemind.push({ email, name });
-                        }
-                    } else {
-                        console.error(`Firebase returned an error for ${id}:`, data.error?.message || 'Unknown error');
+                    console.log(`Found: ${email} | Status: ${status}`);
+
+                    if (email && status === "Active") {
+                        usersToRemind.push({ email, name });
                     }
-                } catch (jsonErr) {
-                    // If we are here, Firebase returned HTML (an error page) instead of JSON
-                    console.error(`CRITICAL: Firebase did not return JSON. It returned HTML. This usually means the Project ID or the Database path is wrong.`);
-                    console.log(`Raw Response snippet: ${responseText.substring(0, 100)}`);
                 }
             }
         }
@@ -51,11 +51,14 @@ exports.handler = async (event) => {
         if (usersToRemind.length === 0) {
             return {
                 statusCode: 200,
-                body: JSON.stringify({ success: true, message: 'No active users found. Check logs for HTML error.' })
+                body: JSON.stringify({
+                    success: true,
+                    message: "No active users found. Check logs for 'FIREBASE ERROR'."
+                })
             };
         }
 
-        // --- 2. SEND EMAILS ---
+        // Send Emails via Brevo
         let emailsSent = 0;
         for (const user of usersToRemind) {
             const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -81,7 +84,7 @@ exports.handler = async (event) => {
         };
 
     } catch (error) {
-        console.error('Function Crash:', error.message);
+        console.error('CRASH:', error.message);
         return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
     }
 };
