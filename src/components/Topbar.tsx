@@ -25,7 +25,7 @@ export const Topbar: React.FC = () => {
           <p className="text-xs text-slate-500 font-medium tracking-wide mb-0.5">NEXT AUTOMATIC EMAIL</p>
           <p className="text-sm font-bold text-slate-700">Tomorrow, 09:00 AM</p>
         </div>
-        <button className="btn btn-primary" onClick={sendReminders}>
+        <button className="btn btn-primary" onClick={() => sendReminders()}>
           Send Manual Reminders
         </button>
         <button className="btn bg-white" onClick={() => document.getElementById('modal-add-user')?.classList.add('show')}>
