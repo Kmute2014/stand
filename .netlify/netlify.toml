@@ -4,6 +4,12 @@ redirectsOrigin = "config"
 plugins = []
 headers = []
 
+[dev]
+  command = "npm run dev"
+  targetPort = 3001
+  port = 8888
+
+
 [build]
 publish = "D:\\stand\\dist"
 publishOrigin = "config"
