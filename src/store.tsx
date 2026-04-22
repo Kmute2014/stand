@@ -57,12 +57,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          // Fetch user from Firestore to verify they were added by admin
-          const { doc, getDoc } = await import('firebase/firestore');
+          // Fetch user from Firestore
+          const { doc, getDoc, setDoc, serverTimestamp } = await import('firebase/firestore');
           const userDocRef = doc(db, 'users', user.uid);
           const userDocSnap = await getDoc(userDocRef);
 
           if (userDocSnap.exists()) {
+            // User exists in Firestore
             const userData = userDocSnap.data();
             setCurrentUser({
               id: user.uid,
@@ -75,14 +76,46 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               streak: userData.streak || 0
             });
           } else {
-            // User authenticated but not in users collection - sign them out
-            console.warn('User not found in database. Please ask admin to add you.');
-            const { signOut } = await import('firebase/auth');
-            await signOut(auth);
-            setCurrentUser(null);
+            // User authenticated in Firebase but not in Firestore - auto-create entry
+            console.log('Creating user document for authenticated user:', user.email);
+
+            const initials = (user.displayName || user.email || 'U')
+              .split(' ')
+              .map((n: string) => n[0])
+              .join('')
+              .substring(0, 2)
+              .toUpperCase();
+            const colors = ['av-blue', 'av-green', 'av-amber', 'av-teal', 'av-purple'];
+            const avatarColor = colors[Math.floor(Math.random() * colors.length)];
+
+            const newUser = {
+              name: user.displayName || 'New User',
+              email: user.email || '',
+              role: 'Member', // Default role - admin can upgrade
+              initials,
+              avatarColor,
+              status: 'Pending',
+              streak: 0,
+              createdAt: serverTimestamp(),
+            };
+
+            // Create the user document
+            await setDoc(userDocRef, newUser);
+            console.log('User document created for:', user.email);
+
+            setCurrentUser({
+              id: user.uid,
+              name: newUser.name,
+              email: newUser.email,
+              role: newUser.role,
+              initials,
+              avatarColor,
+              status: newUser.status,
+              streak: newUser.streak,
+            });
           }
         } catch (err) {
-          console.error('Error fetching user data:', err);
+          console.error('Error fetching/creating user data:', err);
           setCurrentUser(null);
         }
       } else {
