@@ -54,11 +54,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
           // Fetch user from Firestore
-          const { doc, getDoc, setDoc, serverTimestamp } = await import('firebase/firestore');
+          const { doc, getDoc, setDoc } = await import('firebase/firestore');
           const userDocRef = doc(db, 'users', user.uid);
           const userDocSnap = await getDoc(userDocRef);
 
@@ -96,13 +96,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               avatarColor,
               status: 'Pending',
               streak: 0,
-              createdAt: serverTimestamp(),
+              createdAt: new Date().toISOString(),
             };
 
-            // Create the user document
-            await setDoc(userDocRef, newUser);
-            console.log('User document created for:', user.email);
+            // Try to create the user document, but don't fail if it errors
+            try {
+              await setDoc(userDocRef, newUser);
+              console.log('User document created for:', user.email);
+            } catch (createErr) {
+              console.warn('Could not create user document:', createErr);
+              // Continue anyway - user can still log in
+            }
 
+            // Set the user in state regardless of document creation
             setCurrentUser({
               id: user.uid,
               name: newUser.name,
@@ -115,8 +121,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             });
           }
         } catch (err) {
-          console.error('Error fetching/creating user data:', err);
-          setCurrentUser(null);
+          console.error('Critical error in auth state change:', err);
+          // Don't log out on error - just keep them logged in
         }
       } else {
         setCurrentUser(null);
@@ -125,6 +131,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setNotifications([]);
       }
     });
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
