@@ -8,27 +8,18 @@ exports.handler = async (event) => {
 
     try {
         const { userIds } = JSON.parse(event.body || '{}');
-
-        console.log('Reminder request:', { userIds });
-
         const apiKey = process.env.BREVO_API_KEY;
         const senderEmail = process.env.SENDER_EMAIL || 'datrixhost@gmail.com';
         const firebaseProjectId = process.env.FIREBASE_PROJECT_ID || 'gen-lang-client-0352188065';
 
         if (!apiKey) {
-            console.error('BREVO_API_KEY environment variable not set');
             return {
                 statusCode: 500,
-                body: JSON.stringify({
-                    error: 'Email service not configured',
-                    details: 'BREVO_API_KEY not set'
-                })
+                body: JSON.stringify({ error: 'Email service not configured' })
             };
         }
 
-        // Query Firestore for users with 'Active' status
-        console.log('Querying Firestore for active users...');
-
+        // Querying Firestore
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${firebaseProjectId}/databases/(default)/documents/users`;
         const query = `?pageSize=100`;
 
@@ -42,19 +33,22 @@ exports.handler = async (event) => {
                 usersToRemind = firestoreData.documents
                     .filter(doc => {
                         const fields = doc.fields || {};
+
+                        // Extract values safely
                         const email = fields.email?.stringValue;
                         const status = fields.status?.stringValue;
 
-                        // Only include users where status is exactly 'Active'
-                        const isActive = (status === 'Active');
+                        // Debug log to see exactly what is coming from Firebase
+                        console.log(`Checking User: ${email} | Status found: "${status}"`);
 
-                        // If specific userIds provided, filter by those who are also Active
+                        // Logic: Status must exist and match "Active" (ignoring surrounding spaces)
+                        const isActive = status && status.trim() === "Active";
+
                         if (userIds && Array.isArray(userIds) && userIds.length > 0) {
                             const docId = doc.name.split('/').pop();
                             return userIds.includes(docId) && email && isActive;
                         }
 
-                        // Send to all users with an email who have 'Active' status
                         return email && isActive;
                     })
                     .map(doc => ({
@@ -64,62 +58,26 @@ exports.handler = async (event) => {
                     }));
             }
         } catch (err) {
-            console.error('Error querying Firestore:', err.message);
+            console.error('Firestore Fetch Error:', err.message);
             return {
                 statusCode: 500,
-                body: JSON.stringify({
-                    error: 'Failed to fetch users',
-                    details: err.message
-                })
+                body: JSON.stringify({ error: 'Failed to fetch users', details: err.message })
             };
         }
 
         if (usersToRemind.length === 0) {
+            console.log('Filter result: 0 active users found.');
             return {
                 statusCode: 200,
-                body: JSON.stringify({
-                    success: true,
-                    message: 'No active users to remind'
-                })
+                body: JSON.stringify({ success: true, message: 'No active users found' })
             };
         }
-
-        console.log(`Found ${usersToRemind.length} active user(s) to remind:`, usersToRemind.map(u => u.email));
 
         let emailsSent = 0;
         const errors = [];
 
-        // Send reminder to each active user
         for (const user of usersToRemind) {
-            if (!user.email) continue;
-
             try {
-                const emailBody = `Hi ${user.name.split(' ')[0]},
-
-It's time to submit your daily standup at StandUpPhelo!
-
-Please log in and share what you accomplished yesterday, what you're working on today, and any blockers you're facing.
-
-Link: https://standupphelo.netlify.app/
-
-Best regards,
-StandUpPhelo Team`;
-
-                const payload = {
-                    sender: {
-                        name: 'StandUpPhelo',
-                        email: senderEmail
-                    },
-                    to: [{
-                        email: user.email,
-                        name: user.name
-                    }],
-                    subject: '⏰ Daily Standup Reminder - StandUpPhelo',
-                    textContent: emailBody
-                };
-
-                console.log('Sending reminder to:', user.email);
-
                 const response = await fetch('https://api.brevo.com/v3/smtp/email', {
                     method: 'POST',
                     headers: {
@@ -127,26 +85,20 @@ StandUpPhelo Team`;
                         'api-key': apiKey,
                         'content-type': 'application/json'
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        sender: { name: 'StandUpPhelo', email: senderEmail },
+                        to: [{ email: user.email, name: user.name }],
+                        subject: '⏰ Daily Standup Reminder - StandUpPhelo',
+                        textContent: `Hi ${user.name.split(' ')[0]},\n\nIt's time to submit your daily standup at StandUpPhelo!\n\nLink: https://standupphelo.netlify.app/`
+                    })
                 });
 
-                const responseText = await response.text();
-                console.log('Brevo response status:', response.status);
-
-                if (!response.ok) {
-                    console.error('Brevo API error for', user.email, ':', responseText);
-                    errors.push({ email: user.email, error: responseText });
-                } else {
-                    emailsSent++;
-                    console.log(`Reminder sent to ${user.email}`);
-                }
+                if (response.ok) emailsSent++;
+                else errors.push({ email: user.email, status: response.status });
             } catch (err) {
-                console.error(`Failed to send reminder to ${user.email}:`, err.message);
                 errors.push({ email: user.email, error: err.message });
             }
         }
-
-        console.log(`Reminders sent to ${emailsSent} active user(s)`);
 
         return {
             statusCode: 200,
@@ -158,13 +110,9 @@ StandUpPhelo Team`;
         };
 
     } catch (error) {
-        console.error('Function error:', error.message);
         return {
             statusCode: 500,
-            body: JSON.stringify({
-                error: 'Function error',
-                details: error.message
-            })
+            body: JSON.stringify({ error: 'Function error', details: error.message })
         };
     }
 };
