@@ -70,6 +70,8 @@ export const UserStoryCard: React.FC<UserStoryCardProps> = ({
             className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded mt-1"
             onMouseDown={() => console.log('Grip handle pressed for story:', story.title)}
             onMouseUp={() => console.log('Grip handle released for story:', story.title)}
+            onClick={() => console.log('Grip handle clicked for story:', story.title)}
+            onDragStart={() => console.log('Grip handle drag start for story:', story.title)}
           >
             <GripVertical className="w-4 h-4 text-gray-400" />
           </div>

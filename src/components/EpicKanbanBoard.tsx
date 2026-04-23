@@ -40,16 +40,13 @@ export const EpicKanbanBoard: React.FC<EpicKanbanBoardProps> = ({
   const [selectedColumnId, setSelectedColumnId] = useState<string | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 3,
-      },
-    })
+    useSensor(PointerSensor)
   );
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     console.log('Drag started:', { activeId: active.id, active });
+    console.log('Drag start event details:', event);
   };
 
   const handleDragOver = (event: DragOverEvent) => {
