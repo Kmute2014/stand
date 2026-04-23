@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Plus, Calendar, User as UserIcon, Flag, MessageSquare, CheckSquare, Move } from 'lucide-react';
-import { UserStory, Subtask, Comment, Priority, Status, User } from '../types/project';
+import { UserStory, Subtask, Comment, Priority, User } from '../types/project';
 import { User as AppUser } from '../types';
 
 interface UserStoryModalProps {
@@ -32,7 +32,6 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
     title: '',
     description: '',
     priority: 'Medium' as Priority,
-    status: 'Not Started' as Status,
     assignees: [] as User[],
     dueDate: '',
     subtasks: [] as Subtask[],
@@ -56,10 +55,18 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
         title: userStory.title,
         description: userStory.description,
         priority: userStory.priority,
-        status: userStory.status,
         assignees: userStory.assignees,
         dueDate: userStory.dueDate ? userStory.dueDate.toISOString().split('T')[0] : '',
         subtasks: userStory.subtasks,
+      });
+    } else {
+      setFormData({
+        title: '',
+        description: '',
+        priority: 'Medium',
+        assignees: [],
+        dueDate: '',
+        subtasks: [],
       });
     }
   }, [userStory]);
@@ -258,37 +265,20 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Priority
-                </label>
-                <select
-                  value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value as Priority })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                  <option value="Critical">Critical</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as Status })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Not Started">Not Started</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                </select>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Priority
+              </label>
+              <select
+                value={formData.priority}
+                onChange={(e) => setFormData({ ...formData, priority: e.target.value as Priority })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+              </select>
             </div>
 
             <div>
