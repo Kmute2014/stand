@@ -3,6 +3,7 @@ import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, PointerSensor,
 import { SortableContext, arrayMove, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { Plus, ArrowLeft, MoreVertical, GripVertical, User, Calendar, Flag, MessageSquare, CheckSquare } from 'lucide-react';
 import { Epic, KanbanColumn, UserStory, Priority, Status } from '../types/project';
+import { User as AppUser } from '../types';
 import { SortableColumn } from './SortableColumn';
 import { UserStoryCard } from './UserStoryCard';
 import { UserStoryModal } from './UserStoryModal';
@@ -17,6 +18,7 @@ interface EpicKanbanBoardProps {
   onCreateUserStory: (userStory: Omit<UserStory, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onUpdateUserStory: (userStory: UserStory) => void;
   onDeleteUserStory: (userStoryId: string) => void;
+  appUsers: AppUser[];
 }
 
 export const EpicKanbanBoard: React.FC<EpicKanbanBoardProps> = ({
@@ -29,6 +31,7 @@ export const EpicKanbanBoard: React.FC<EpicKanbanBoardProps> = ({
   onCreateUserStory,
   onUpdateUserStory,
   onDeleteUserStory,
+  appUsers,
 }) => {
   const [showCreateColumnModal, setShowCreateColumnModal] = useState(false);
   const [newColumnName, setNewColumnName] = useState('');
@@ -62,11 +65,13 @@ export const EpicKanbanBoard: React.FC<EpicKanbanBoardProps> = ({
     const activeId = active.id as string;
     const overId = over.id as string;
 
+    console.log('Drag end:', { activeId, overId });
+
     // Handle column reordering
-    if (activeId.startsWith('column-') && overId.startsWith('column-')) {
+    if (activeId.startsWith('col-') && overId.startsWith('col-')) {
       const oldIndex = epic.columns.findIndex(col => col.id === activeId);
       const newIndex = epic.columns.findIndex(col => col.id === overId);
-      
+
       if (oldIndex !== newIndex) {
         const newColumns = arrayMove(epic.columns, oldIndex, newIndex);
         onUpdateEpic({
@@ -77,36 +82,40 @@ export const EpicKanbanBoard: React.FC<EpicKanbanBoardProps> = ({
     }
 
     // Handle user story movement between columns
-    if (activeId.startsWith('story-') && overId.startsWith('column-')) {
-      const sourceColumn = epic.columns.find(col => 
-        col.userStories.some(story => story.id === activeId)
-      );
-      const targetColumn = epic.columns.find(col => col.id === overId);
+    // Check if the active item is a user story by looking for it in any column
+    const sourceColumn = epic.columns.find(col =>
+      col.userStories.some(story => story.id === activeId)
+    );
 
-      if (sourceColumn && targetColumn && sourceColumn.id !== targetColumn.id) {
-        const story = sourceColumn.userStories.find(s => s.id === activeId);
-        if (story) {
-          const updatedStory = { ...story, columnId: targetColumn.id };
-          
-          const newColumns = epic.columns.map(col => {
-            if (col.id === sourceColumn.id) {
-              return {
-                ...col,
-                userStories: col.userStories.filter(s => s.id !== activeId),
-              };
-            }
-            if (col.id === targetColumn.id) {
-              return {
-                ...col,
-                userStories: [...col.userStories, updatedStory],
-              };
-            }
-            return col;
-          });
+    // Check if the target is a column
+    const targetColumn = epic.columns.find(col => col.id === overId);
 
-          onUpdateEpic({ ...epic, columns: newColumns });
-          onUpdateUserStory(updatedStory);
-        }
+    console.log('Drag analysis:', { sourceColumn: sourceColumn?.name, targetColumn: targetColumn?.name });
+
+    if (sourceColumn && targetColumn && sourceColumn.id !== targetColumn.id) {
+      const story = sourceColumn.userStories.find(s => s.id === activeId);
+      if (story) {
+        console.log('Moving story:', story.title, 'from', sourceColumn.name, 'to', targetColumn.name);
+        const updatedStory = { ...story, columnId: targetColumn.id };
+
+        const newColumns = epic.columns.map(col => {
+          if (col.id === sourceColumn.id) {
+            return {
+              ...col,
+              userStories: col.userStories.filter(s => s.id !== activeId),
+            };
+          }
+          if (col.id === targetColumn.id) {
+            return {
+              ...col,
+              userStories: [...col.userStories, updatedStory],
+            };
+          }
+          return col;
+        });
+
+        onUpdateEpic({ ...epic, columns: newColumns });
+        onUpdateUserStory(updatedStory);
       }
     }
   };
@@ -178,12 +187,12 @@ export const EpicKanbanBoard: React.FC<EpicKanbanBoardProps> = ({
 
   const getEpicStats = () => {
     const totalStories = epic.columns.reduce((acc, col) => acc + col.userStories.length, 0);
-    const completedStories = epic.columns.reduce((acc, col) => 
+    const completedStories = epic.columns.reduce((acc, col) =>
       acc + col.userStories.filter(story => story.status === 'Completed').length, 0);
-    const totalSubtasks = epic.columns.reduce((acc, col) => 
+    const totalSubtasks = epic.columns.reduce((acc, col) =>
       acc + col.userStories.reduce((storyAcc, story) => storyAcc + story.subtasks.length, 0), 0);
-    const completedSubtasks = epic.columns.reduce((acc, col) => 
-      acc + col.userStories.reduce((storyAcc, story) => 
+    const completedSubtasks = epic.columns.reduce((acc, col) =>
+      acc + col.userStories.reduce((storyAcc, story) =>
         storyAcc + story.subtasks.filter(subtask => subtask.completed).length, 0), 0);
 
     return { totalStories, completedStories, totalSubtasks, completedSubtasks };
@@ -328,6 +337,7 @@ export const EpicKanbanBoard: React.FC<EpicKanbanBoardProps> = ({
             setSelectedUserStory(null);
             setSelectedColumnId(null);
           }}
+          appUsers={appUsers}
         />
       )}
     </div>

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Program, Project, Sprint, Epic, UserStory, Status } from '../types/project';
+import { User as AppUser } from '../types';
 import { validateSprintCompletion } from '../utils/sprintValidation';
+import { useAppContext } from '../store';
 import { ProgramManager } from './ProgramManager';
 import { ProgramDetailView } from './ProgramDetailView';
 import { ProjectManager } from './ProjectManager';
@@ -12,6 +14,7 @@ import { GanttChart } from './GanttChart';
 type ViewType = 'programs' | 'program-detail' | 'project' | 'sprint' | 'epic' | 'gantt';
 
 export const ProjectManagementApp: React.FC = () => {
+  const { users } = useAppContext();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [currentView, setCurrentView] = useState<ViewType>('programs');
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
@@ -58,7 +61,7 @@ export const ProjectManagementApp: React.FC = () => {
                     programId: '',
                     columns: [
                       {
-                        id: uuidv4(),
+                        id: 'col-todo',
                         name: 'To Do',
                         order: 0,
                         epicId: '',
@@ -79,22 +82,22 @@ export const ProjectManagementApp: React.FC = () => {
                             subtasks: [
                               {
                                 id: uuidv4(),
-                                title: 'Code the API endpoint',
-                                completed: true,
+                                title: 'Create onboarding checklist',
+                                completed: false,
                                 comments: [],
                                 createdAt: new Date(),
                                 updatedAt: new Date(),
                               },
                               {
                                 id: uuidv4(),
-                                title: 'Create frontend components',
-                                completed: false,
+                                title: 'Set up email templates',
+                                completed: true,
                                 comments: [],
                                 createdAt: new Date(),
                                 updatedAt: new Date(),
                               },
                             ],
-                            columnId: '',
+                            columnId: 'col-todo',
                             epicId: '',
                             sprintId: '',
                             projectId: '',
@@ -107,7 +110,7 @@ export const ProjectManagementApp: React.FC = () => {
                         updatedAt: new Date(),
                       },
                       {
-                        id: uuidv4(),
+                        id: 'col-progress',
                         name: 'In Progress',
                         order: 1,
                         epicId: '',
@@ -119,7 +122,7 @@ export const ProjectManagementApp: React.FC = () => {
                         updatedAt: new Date(),
                       },
                       {
-                        id: uuidv4(),
+                        id: 'col-done',
                         name: 'Done',
                         order: 2,
                         epicId: '',
@@ -535,6 +538,7 @@ export const ProjectManagementApp: React.FC = () => {
           onCreateUserStory={handleCreateUserStory}
           onUpdateUserStory={handleUpdateUserStory}
           onDeleteUserStory={handleDeleteUserStory}
+          appUsers={users}
         />
       )}
 

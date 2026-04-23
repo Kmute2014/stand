@@ -113,14 +113,38 @@ export const UserStoryCard: React.FC<UserStoryCardProps> = ({
         )}
 
         {totalSubtasks > 0 && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <CheckSquare className="w-4 h-4" />
-            <span>{completedSubtasks}/{totalSubtasks} completed</span>
-            <div className="flex-1 bg-gray-200 rounded-full h-1.5">
-              <div 
-                className="bg-green-600 h-1.5 rounded-full"
-                style={{ width: `${(completedSubtasks / totalSubtasks) * 100}%` }}
-              ></div>
+          <div className="flex items-start gap-2 text-sm text-gray-600">
+            <CheckSquare className="w-4 h-4 mt-0.5" />
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span>{completedSubtasks}/{totalSubtasks} completed</span>
+              </div>
+              <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                <div
+                  className="bg-green-600 h-1.5 rounded-full"
+                  style={{ width: `${(completedSubtasks / totalSubtasks) * 100}%` }}
+                ></div>
+              </div>
+              {/* Show assigned subtasks */}
+              <div className="mt-1 flex flex-wrap gap-1">
+                {story.subtasks.filter(subtask => subtask.assignee).slice(0, 3).map((subtask) => (
+                  <div
+                    key={subtask.id}
+                    className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded text-xs"
+                    title={`${subtask.title} - Assigned to ${subtask.assignee!.name}`}
+                  >
+                    <div className="w-3 h-3 rounded-full bg-blue-500 text-white flex items-center justify-center text-[8px] font-medium">
+                      {subtask.assignee!.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-blue-700 truncate max-w-20">{subtask.assignee!.name}</span>
+                  </div>
+                ))}
+                {story.subtasks.filter(subtask => subtask.assignee).length > 3 && (
+                  <div className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-600">
+                    +{story.subtasks.filter(subtask => subtask.assignee).length - 3} more
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

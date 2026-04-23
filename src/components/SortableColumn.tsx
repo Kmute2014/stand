@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { Plus, MoreVertical } from 'lucide-react';
 import { KanbanColumn, UserStory } from '../types/project';
@@ -26,6 +27,10 @@ export const SortableColumn: React.FC<SortableColumnProps> = ({
     transition,
     isDragging,
   } = useSortable({ id: column.id });
+
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+    id: column.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -57,7 +62,7 @@ export const SortableColumn: React.FC<SortableColumnProps> = ({
               <MoreVertical className="w-4 h-4 text-gray-500" />
             </button>
           </div>
-          
+
           <button
             onClick={onAddStory}
             className="w-full flex items-center justify-center gap-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-600 text-sm transition-colors"
@@ -67,7 +72,11 @@ export const SortableColumn: React.FC<SortableColumnProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 p-4 overflow-y-auto min-h-[400px]">
+        <div
+          ref={setDroppableRef}
+          className={`flex-1 p-4 overflow-y-auto min-h-[400px] transition-colors ${isOver ? 'bg-blue-50 border-2 border-dashed border-blue-400' : ''
+            }`}
+        >
           <div className="space-y-3">
             {column.userStories.map((story) => (
               <UserStoryCard

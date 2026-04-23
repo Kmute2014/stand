@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Calendar, User as UserIcon, Flag, MessageSquare, CheckSquare } from 'lucide-react';
 import { UserStory, Subtask, Comment, Priority, Status, User } from '../types/project';
+import { User as AppUser } from '../types';
 
 interface UserStoryModalProps {
   userStory: UserStory | null;
@@ -12,6 +13,7 @@ interface UserStoryModalProps {
   onCreate: (userStory: Omit<UserStory, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onUpdate: (userStory: UserStory) => void;
   onCancel: () => void;
+  appUsers: AppUser[];
 }
 
 export const UserStoryModal: React.FC<UserStoryModalProps> = ({
@@ -24,6 +26,7 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
   onCreate,
   onUpdate,
   onCancel,
+  appUsers,
 }) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -86,6 +89,8 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
         id: `subtask-${Date.now()}`,
         title: newSubtaskTitle.trim(),
         completed: false,
+        assignee: newSubtaskAssignee || undefined,
+        dueDate: newSubtaskDueDate ? new Date(newSubtaskDueDate) : undefined,
         comments: [],
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -96,6 +101,8 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
         subtasks: [...formData.subtasks, newSubtask],
       });
       setNewSubtaskTitle('');
+      setNewSubtaskAssignee(null);
+      setNewSubtaskDueDate('');
     }
   };
 
@@ -249,28 +256,62 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
                 Subtasks
               </label>
               <div className="space-y-2">
-                <div className="flex gap-2">
+                <div className="grid grid-cols-1 gap-2">
                   <input
                     type="text"
                     value={newSubtaskTitle}
                     onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Add a subtask..."
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSubtask())}
                   />
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={newSubtaskAssignee?.id || ''}
+                      onChange={(e) => {
+                        const selectedUser = appUsers.find(u => u.id === e.target.value);
+                        if (selectedUser) {
+                          const projectUser: User = {
+                            id: selectedUser.id,
+                            name: selectedUser.name,
+                            email: selectedUser.email,
+                          };
+                          setNewSubtaskAssignee(projectUser);
+                        } else {
+                          setNewSubtaskAssignee(null);
+                        }
+                      }}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Assign to...</option>
+                      {appUsers.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.name} ({user.email})
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="date"
+                      value={newSubtaskDueDate}
+                      onChange={(e) => setNewSubtaskDueDate(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Due date"
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={handleAddSubtask}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <Plus className="w-5 h-5" />
+                    Add Subtask
                   </button>
                 </div>
 
                 {formData.subtasks.map((subtask) => (
                   <div key={subtask.id} className="bg-gray-50 rounded-lg p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-1">
                         <input
                           type="checkbox"
                           checked={subtask.completed}
@@ -288,6 +329,21 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
                       >
                         Delete
                       </button>
+                    </div>
+
+                    <div className="ml-6 space-y-1 text-sm">
+                      {subtask.assignee && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <UserIcon className="w-4 h-4" />
+                          <span>Assigned to: {subtask.assignee.name}</span>
+                        </div>
+                      )}
+                      {subtask.dueDate && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Calendar className="w-4 h-4" />
+                          <span>Due: {subtask.dueDate.toLocaleDateString()}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="ml-6 space-y-2">
