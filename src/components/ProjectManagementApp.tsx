@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { ArrowLeft, Calendar } from 'lucide-react';
 import { Program, Project, Sprint, Epic, UserStory, Status } from '../types/project';
 import { User as AppUser } from '../types';
 import { validateSprintCompletion } from '../utils/sprintValidation';
@@ -517,23 +518,53 @@ export const ProjectManagementApp: React.FC = () => {
         />
       )}
 
-      {currentView === 'project' && selectedProgram && selectedProject && (
+      {currentView === 'project' && selectedProgram && selectedProjectId && (
         <>
-          {console.log('Rendering ProjectManager:', {
-            view: currentView,
-            selectedProgram: selectedProgram.name,
-            selectedProject: selectedProject.name,
-            selectedProjectId,
-            programId: selectedProgram.id
-          })}
-          <ProjectManager
-            project={selectedProgram.projects.find(p => p.id === selectedProjectId)!}
-            programName={selectedProgram.name}
-            onCreateSprint={handleCreateSprint}
-            onSelectSprint={handleSelectSprint}
-            onBack={handleBack}
-            onShowGantt={handleShowGantt}
-          />
+          {(() => {
+            const project = selectedProgram.projects.find(p => p.id === selectedProjectId);
+            if (!project) {
+              console.log('Project not found:', { selectedProjectId, availableProjects: selectedProgram.projects.map(p => p.id) });
+              return (
+                <div className="p-6">
+                  <div className="flex items-center gap-4 mb-6">
+                    <button
+                      onClick={handleBack}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <div>
+                      <div className="text-sm text-gray-600">{selectedProgram.name}</div>
+                      <h1 className="text-3xl font-bold text-gray-900">Project Not Found</h1>
+                    </div>
+                  </div>
+                  <div className="text-center py-12">
+                    <div className="text-gray-400 mb-4">
+                      <Calendar className="w-16 h-16 mx-auto" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Project Not Found</h3>
+                    <p className="text-gray-600 mb-4">The selected project could not be found</p>
+                    <button
+                      onClick={handleBack}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Back to Program
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <ProjectManager
+                project={project}
+                programName={selectedProgram.name}
+                onCreateSprint={handleCreateSprint}
+                onSelectSprint={handleSelectSprint}
+                onBack={handleBack}
+                onShowGantt={handleShowGantt}
+              />
+            );
+          })()}
         </>
       )}
 
