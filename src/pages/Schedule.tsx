@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../store';
-import { Lock } from 'lucide-react';
+import { Lock, Loader2, Check } from 'lucide-react';
 
 export const SchedulePage: React.FC = () => {
   const { schedule, updateSchedule, notifications, currentUser } = useAppContext();
-  const [localSchedule, setLocalSchedule] = useState(schedule);
-  const isAdmin = currentUser?.role === 'Admin';
 
+  // Local state for form handling
+  const [localSchedule, setLocalSchedule] = useState(schedule);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const isAdmin = currentUser?.role === 'Admin';
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   const toggleDay = (day: string) => {
@@ -20,8 +24,22 @@ export const SchedulePage: React.FC = () => {
     setLocalSchedule({ ...localSchedule, activeDays: newDays });
   };
 
-  const handleSave = () => {
-    updateSchedule(localSchedule);
+  const handleSave = async () => {
+    if (!isAdmin) return;
+
+    setIsSaving(true);
+    setSaveSuccess(false);
+
+    try {
+      await updateSchedule(localSchedule);
+      setSaveSuccess(true);
+      // Reset success checkmark after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error("Failed to save schedule:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -38,7 +56,19 @@ export const SchedulePage: React.FC = () => {
           </div>
           {isAdmin && (
             <div className="ph-actions">
-              <button className="btn btn-sm btn-primary" onClick={handleSave}>Save changes</button>
+              <button
+                className={`btn btn-sm flex items-center gap-2 transition-all ${saveSuccess ? 'bg-green-600 text-white' : 'btn-primary'
+                  }`}
+                onClick={handleSave}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : saveSuccess ? (
+                  <Check className="w-3.5 h-3.5" />
+                ) : null}
+                {isSaving ? 'Saving...' : saveSuccess ? 'Saved' : 'Save changes'}
+              </button>
             </div>
           )}
         </div>
@@ -52,6 +82,7 @@ export const SchedulePage: React.FC = () => {
       )}
 
       <div className="grid-2">
+        {/* Active Days Card */}
         <div className="card">
           <div className="card-h"><span className="card-title">Active days</span></div>
           <div className="card-body">
@@ -74,6 +105,7 @@ export const SchedulePage: React.FC = () => {
           </div>
         </div>
 
+        {/* Time & Settings Card */}
         <div className="card">
           <div className="card-h"><span className="card-title">Time & timezone</span></div>
           <div className="card-body">
@@ -84,7 +116,7 @@ export const SchedulePage: React.FC = () => {
                 className="form-input"
                 value={localSchedule.time}
                 onChange={(e) => isAdmin && setLocalSchedule({ ...localSchedule, time: e.target.value })}
-                disabled={!isAdmin}
+                disabled={!isAdmin || isSaving}
               />
             </div>
             <div className="form-group">
@@ -93,7 +125,7 @@ export const SchedulePage: React.FC = () => {
                 className="form-input form-select"
                 value={localSchedule.timezone}
                 onChange={(e) => isAdmin && setLocalSchedule({ ...localSchedule, timezone: e.target.value })}
-                disabled={!isAdmin}
+                disabled={!isAdmin || isSaving}
               >
                 <option>Africa/Accra (GMT+0)</option>
                 <option>America/New_York (GMT-5)</option>
@@ -108,7 +140,7 @@ export const SchedulePage: React.FC = () => {
                   checked={localSchedule.autoEnabled}
                   onChange={(e) => isAdmin && setLocalSchedule({ ...localSchedule, autoEnabled: e.target.checked })}
                   className="opacity-0 w-0 h-0 absolute"
-                  disabled={!isAdmin}
+                  disabled={!isAdmin || isSaving}
                 />
                 <span className={`tslider absolute inset-0 bg-[var(--bg-5)] rounded-full border border-[var(--border-2)] before:content-[''] before:absolute before:w-4 before:h-4 before:left-[2px] before:top-[2px] before:bg-[var(--text-2)] before:rounded-full before:transition-all
                   ${localSchedule.autoEnabled ? '!bg-[var(--accent)] !border-transparent before:translate-x-[16px] before:!bg-white' : ''}
@@ -120,10 +152,13 @@ export const SchedulePage: React.FC = () => {
         </div>
       </div>
 
-      <div className="card">
+      {/* Notification Log Section */}
+      <div className="card mt-6">
         <div className="card-h">
-          <span className="card-title">Notification log</span>
-          <span className="badge b-neutral">Today</span>
+          <div className="flex items-center gap-2">
+            <span className="card-title">Notification log</span>
+            <span className="badge b-neutral">Today</span>
+          </div>
         </div>
         <div className="card-body">
           {notifications.map((notif, idx) => (
@@ -136,7 +171,9 @@ export const SchedulePage: React.FC = () => {
             </div>
           ))}
           {notifications.length === 0 && (
-            <div className="text-[12px] text-[var(--text-3)] text-center py-4">No notifications yet today.</div>
+            <div className="text-[12px] text-[var(--text-3)] text-center py-6">
+              No notifications logs found for today.
+            </div>
           )}
         </div>
       </div>
