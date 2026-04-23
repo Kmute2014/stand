@@ -19,6 +19,7 @@ import { AddUserModal } from './components/AddUserModal';
 import { EditUserModal } from './components/EditUserModal';
 import { EditResponseModal } from './components/EditResponseModal';
 import { Toast } from './components/Toast';
+import { ProjectManagementPage } from './pages/ProjectManagementPage';
 
 export default function App() {
   const { currentPage } = useAppContext();
@@ -41,6 +42,7 @@ export default function App() {
           {currentPage === 'dashboard' && <Dashboard />}
           {currentPage === 'responses' && <Responses />}
           {currentPage === 'mood' && <TeamMood />}
+          {currentPage === 'projects' && <ProjectManagementPage />}
           {currentPage === 'users' && <UsersPage />}
           {currentPage === 'schedule' && <SchedulePage />}
           {currentPage === 'standup' && <StandupForm />}

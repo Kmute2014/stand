@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppContext } from '../store';
-import { LayoutDashboard, MessageSquare, Smile, Users, Clock, Edit3, History, LogOut, Settings, Lock } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Smile, Users, Clock, Edit3, History, LogOut, Settings, Lock, KanbanSquare } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 
@@ -18,6 +18,11 @@ export const Sidebar: React.FC = () => {
         { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4 opacity-80 current-icon" /> },
         { id: 'responses', label: 'Responses', icon: <MessageSquare className="w-4 h-4 opacity-80 current-icon" />, badge: '3' },
         { id: 'mood', label: 'Team Mood', icon: <Smile className="w-4 h-4 opacity-80 current-icon" /> },
+      ]
+    },
+    {
+      group: 'Project Management', items: [
+        { id: 'projects', label: 'Projects', icon: <KanbanSquare className="w-4 h-4 opacity-80 current-icon" /> },
       ]
     },
     {
