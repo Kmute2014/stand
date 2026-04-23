@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Plus, Calendar, User as UserIcon, Flag, MessageSquare, CheckSquare } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Plus, Calendar, User as UserIcon, Flag, MessageSquare, CheckSquare, Move } from 'lucide-react';
 import { UserStory, Subtask, Comment, Priority, Status, User } from '../types/project';
 import { User as AppUser } from '../types';
 
@@ -43,6 +43,12 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
   const [newSubtaskDueDate, setNewSubtaskDueDate] = useState('');
   const [newComment, setNewComment] = useState('');
   const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null);
+
+  // Modal drag functionality
+  const [isDragging, setIsDragging] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (userStory) {
@@ -117,6 +123,39 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
     });
   };
 
+  // Modal drag handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    });
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (isDragging) {
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragStart]);
+
   const handleDeleteSubtask = (subtaskId: string) => {
     setFormData({
       ...formData,
@@ -164,11 +203,24 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {userStory ? 'Edit User Story' : 'Create User Story'}
-          </h2>
+      <div
+        ref={modalRef}
+        className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+        style={{
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          cursor: isDragging ? 'grabbing' : 'default',
+        }}
+      >
+        <div
+          className="flex items-center justify-between p-6 border-b border-gray-200 cursor-grab hover:bg-gray-50 transition-colors"
+          onMouseDown={handleMouseDown}
+        >
+          <div className="flex items-center gap-2">
+            <Move className="w-5 h-5 text-gray-400" />
+            <h2 className="text-xl font-semibold text-gray-900">
+              {userStory ? 'Edit User Story' : 'Create User Story'}
+            </h2>
+          </div>
           <button
             onClick={onCancel}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"

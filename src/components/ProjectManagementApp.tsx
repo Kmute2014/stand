@@ -192,6 +192,18 @@ export const ProjectManagementApp: React.FC = () => {
   const selectedProgram = programs.find(p => p.id === selectedProgramId);
   const selectedProject = selectedProgram?.projects.find(p => p.id === selectedProjectId);
   const selectedSprint = selectedProject?.sprints.find(s => s.id === selectedSprintId);
+
+  // Debug logging
+  console.log('Current state:', {
+    currentView,
+    selectedProgramId,
+    selectedProjectId,
+    selectedSprintId,
+    selectedProgram: selectedProgram?.name,
+    selectedProject: selectedProject?.name,
+    programsCount: programs.length,
+    programProjectsCount: selectedProgram?.projects.length
+  });
   const selectedEpic = selectedSprint?.epics.find(e => e.id === selectedEpicId);
 
   const handleCreateProgram = (programData: Omit<Program, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -427,8 +439,10 @@ export const ProjectManagementApp: React.FC = () => {
   };
 
   const handleSelectProject = (projectId: string) => {
+    console.log('handleSelectProject called:', { projectId, currentView });
     setSelectedProjectId(projectId);
     setCurrentView('project');
+    console.log('After setting:', { selectedProjectId: projectId, view: 'project' });
   };
 
   const handleSelectSprint = (sprintId: string) => {
@@ -504,14 +518,23 @@ export const ProjectManagementApp: React.FC = () => {
       )}
 
       {currentView === 'project' && selectedProgram && selectedProject && (
-        <ProjectManager
-          project={selectedProgram.projects.find(p => p.id === selectedProjectId)!}
-          programName={selectedProgram.name}
-          onCreateSprint={handleCreateSprint}
-          onSelectSprint={handleSelectSprint}
-          onBack={handleBack}
-          onShowGantt={handleShowGantt}
-        />
+        <>
+          {console.log('Rendering ProjectManager:', {
+            view: currentView,
+            selectedProgram: selectedProgram.name,
+            selectedProject: selectedProject.name,
+            selectedProjectId,
+            programId: selectedProgram.id
+          })}
+          <ProjectManager
+            project={selectedProgram.projects.find(p => p.id === selectedProjectId)!}
+            programName={selectedProgram.name}
+            onCreateSprint={handleCreateSprint}
+            onSelectSprint={handleSelectSprint}
+            onBack={handleBack}
+            onShowGantt={handleShowGantt}
+          />
+        </>
       )}
 
       {currentView === 'sprint' && selectedProject && (
