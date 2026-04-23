@@ -2,7 +2,7 @@ const { schedule } = require('@netlify/functions');
 
 // Set to run every 15 minutes. 
 // The logic below will ensure it only sends at the EXACT hour/minute saved in Firestore.
-export const config = {
+exports.config = {
     schedule: "*/15 * * * *"
 };
 

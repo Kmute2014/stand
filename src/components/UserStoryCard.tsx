@@ -24,6 +24,14 @@ export const UserStoryCard: React.FC<UserStoryCardProps> = ({
     isDragging,
   } = useSortable({ id: story.id });
 
+  console.log('UserStoryCard drag setup:', {
+    storyId: story.id,
+    storyTitle: story.title,
+    hasAttributes: !!attributes,
+    hasListeners: !!listeners,
+    hasSetNodeRef: !!setNodeRef
+  });
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -60,6 +68,8 @@ export const UserStoryCard: React.FC<UserStoryCardProps> = ({
             {...attributes}
             {...listeners}
             className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded mt-1"
+            onMouseDown={() => console.log('Grip handle pressed for story:', story.title)}
+            onMouseUp={() => console.log('Grip handle released for story:', story.title)}
           >
             <GripVertical className="w-4 h-4 text-gray-400" />
           </div>
