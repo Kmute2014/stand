@@ -51,7 +51,7 @@ export const ProgramManager: React.FC<ProgramManagerProps> = ({
     const completed = projects.filter(p => p.status === 'Completed').length;
     const inProgress = projects.filter(p => p.status === 'In Progress').length;
     const notStarted = projects.filter(p => p.status === 'Not Started').length;
-    
+
     return { total, completed, inProgress, notStarted };
   };
 
@@ -121,26 +121,27 @@ export const ProgramManager: React.FC<ProgramManagerProps> = ({
       <div className="grid gap-6">
         {programs.map((program) => {
           const stats = getProjectStats(program.projects);
-          
+
           return (
             <div
               key={program.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => onSelectProgram(program.id)}
             >
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
-                    <h2 
-                      className="text-2xl font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
-                      onClick={() => onSelectProgram(program.id)}
-                    >
+                    <h2 className="text-2xl font-semibold text-gray-900">
                       {program.name}
                     </h2>
                     {program.description && (
                       <p className="text-gray-600 mt-2">{program.description}</p>
                     )}
                   </div>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  <button
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <MoreVertical className="w-5 h-5 text-gray-500" />
                   </button>
                 </div>
@@ -160,11 +161,11 @@ export const ProgramManager: React.FC<ProgramManagerProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">Status:</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                      stats.completed === stats.total ? 'Completed' : 
-                      stats.inProgress > 0 ? 'In Progress' : 'Not Started'
+                      stats.completed === stats.total ? 'Completed' :
+                        stats.inProgress > 0 ? 'In Progress' : 'Not Started'
                     )}`}>
-                      {stats.completed === stats.total ? 'Completed' : 
-                       stats.inProgress > 0 ? 'In Progress' : 'Not Started'}
+                      {stats.completed === stats.total ? 'Completed' :
+                        stats.inProgress > 0 ? 'In Progress' : 'Not Started'}
                     </span>
                   </div>
                   <div className="flex gap-2 text-sm">
@@ -182,7 +183,10 @@ export const ProgramManager: React.FC<ProgramManagerProps> = ({
                         <div
                           key={project.id}
                           className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                          onClick={() => onSelectProject(project.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectProject(project.id);
+                          }}
                         >
                           <div className="flex items-center gap-3">
                             <ChevronRight className="w-4 h-4 text-gray-400" />
