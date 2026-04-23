@@ -441,9 +441,24 @@ export const ProjectManagementApp: React.FC = () => {
 
   const handleSelectProject = (projectId: string) => {
     console.log('handleSelectProject called:', { projectId, currentView });
-    setSelectedProjectId(projectId);
-    setCurrentView('project');
-    console.log('After setting:', { selectedProjectId: projectId, view: 'project' });
+
+    // Find which program contains this project
+    let programId = null;
+    for (const program of programs) {
+      if (program.projects.some(p => p.id === projectId)) {
+        programId = program.id;
+        break;
+      }
+    }
+
+    if (programId) {
+      setSelectedProgramId(programId);
+      setSelectedProjectId(projectId);
+      setCurrentView('project');
+      console.log('After setting:', { selectedProjectId: projectId, selectedProgramId: programId, view: 'project' });
+    } else {
+      console.error('Project not found in any program:', { projectId });
+    }
   };
 
   const handleSelectSprint = (sprintId: string) => {
