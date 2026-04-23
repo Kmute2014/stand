@@ -60,7 +60,7 @@ export const UserStoryCard: React.FC<UserStoryCardProps> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
+      className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 cursor-pointer hover:shadow-md transition-shadow"
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-start gap-2 flex-1">

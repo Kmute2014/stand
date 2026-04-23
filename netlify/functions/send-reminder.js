@@ -2,7 +2,7 @@ const { schedule } = require('@netlify/functions');
 
 // Set to run every 15 minutes. 
 // The logic below will ensure it only sends at the EXACT hour/minute saved in Firestore.
-const handler = async (event) => {
+exports.handler = async (event) => {
     // Detect if trigger is automated (Cron) or manual (Button Click)
     const isCronTrigger = event.kind === 'schedule';
 
@@ -142,5 +142,5 @@ const handler = async (event) => {
     }
 };
 
-// Export the scheduled handler
-module.exports = schedule("*/15 * * * *", handler);
+// Schedule configuration for Netlify Functions
+exports.schedule = "*/15 * * * *";

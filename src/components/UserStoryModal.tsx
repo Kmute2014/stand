@@ -212,7 +212,7 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div
         ref={modalRef}
-        className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+        className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl mx-4 md:mx-auto"
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
           cursor: isDragging ? 'grabbing' : 'default',
@@ -236,8 +236,8 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="space-y-4 md:space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Title

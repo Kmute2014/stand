@@ -253,7 +253,7 @@ export const EpicKanbanBoard: React.FC<EpicKanbanBoardProps> = ({
         onDragEnd={handleDragEnd}
       >
         <div className="flex-1 overflow-x-auto">
-          <div className="flex gap-4 h-full min-w-max">
+          <div className="flex gap-2 md:gap-4 h-full min-w-max">
             <SortableContext items={epic.columns.map(col => col.id)} strategy={horizontalListSortingStrategy}>
               {epic.columns.map((column) => (
                 <SortableColumn
@@ -266,14 +266,15 @@ export const EpicKanbanBoard: React.FC<EpicKanbanBoardProps> = ({
               ))}
             </SortableContext>
 
-            <div className="w-80 flex-shrink-0">
-              <div className="bg-gray-50 rounded-lg p-4 border-2 border-dashed border-gray-300">
+            <div className="w-72 md:w-80 flex-shrink-0">
+              <div className="bg-gray-50 rounded-lg p-3 md:p-4 border-2 border-dashed border-gray-300">
                 <button
                   onClick={() => setShowCreateColumnModal(true)}
-                  className="w-full h-20 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="w-full h-16 md:h-20 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm md:text-base"
                 >
-                  <Plus className="w-6 h-6 mr-2" />
-                  Add Column
+                  <Plus className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
+                  <span className="hidden md:inline">Add Column</span>
+                  <span className="md:hidden">+</span>
                 </button>
               </div>
             </div>

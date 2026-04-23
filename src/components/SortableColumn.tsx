@@ -42,7 +42,7 @@ export const SortableColumn: React.FC<SortableColumnProps> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className="w-80 flex-shrink-0"
+      className="w-72 md:w-80 flex-shrink-0"
     >
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col">
         <div className="p-4 border-b border-gray-200">
