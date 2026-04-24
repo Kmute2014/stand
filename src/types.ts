@@ -27,6 +27,7 @@ export type StandupResponse = {
   today: string;
   blockers: string;
   mood: Mood;
+  createdAt: string;
 };
 
 export type Schedule = {

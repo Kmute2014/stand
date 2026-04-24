@@ -1,9 +1,9 @@
 import React from 'react';
 import { useAppContext } from '../store';
-import { Bell } from 'lucide-react';
+import { Bell, Plus } from 'lucide-react';
 
 export const Topbar: React.FC = () => {
-  const { currentPage, sendReminders, showToast } = useAppContext();
+  const { currentPage, sendReminders, showToast, setEditingResponse } = useAppContext();
 
   const pageNames: Record<string, string> = {
     dashboard: 'Dashboard',
@@ -11,7 +11,6 @@ export const Topbar: React.FC = () => {
     mood: 'Team Mood',
     users: 'Team Members',
     schedule: 'Schedule',
-    standup: 'Submit Standup',
     myhistory: 'My History'
   };
 
@@ -25,8 +24,8 @@ export const Topbar: React.FC = () => {
           <p className="text-xs text-slate-500 font-medium tracking-wide mb-0.5">NEXT AUTOMATIC EMAIL</p>
           <p className="text-sm font-bold text-slate-700">Tomorrow, 09:00 AM</p>
         </div>
-        <button className="btn btn-primary" onClick={() => sendReminders()}>
-          Send Manual Reminders
+        <button className="btn btn-primary flex items-center gap-2" onClick={() => setEditingResponse({} as any)}>
+          <Plus className="w-4 h-4" /> New Stand Up Today
         </button>
         <button className="btn bg-white" onClick={() => document.getElementById('modal-add-user')?.classList.add('show')}>
           + Add Member

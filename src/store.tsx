@@ -230,11 +230,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     showToast('Settings updated.', 'green');
   };
 
+  const deleteResponse = async (id: string) => {
+    // Check if current user is admin
+    if (!currentUser || currentUser.role !== 'Admin') {
+      showToast('Only admins can delete responses.', 'red');
+      return;
+    }
+
+    try {
+      const { doc, deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, 'responses', id));
+      showToast('Response deleted successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to delete response.', 'red');
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       currentPage, setCurrentPage, currentUser, users, responses, schedule, companySettings, notifications,
       showToast, toastConfig, addUser: () => { }, updateUser, deleteUser, submitStandup, updateResponse: () => { },
-      updateSchedule, updateCompanySettings, deleteResponse: () => { }, sendReminders,
+      updateSchedule, updateCompanySettings, deleteResponse, sendReminders,
       editingUser, setEditingUser, editingResponse, setEditingResponse
     }}>
       {children}

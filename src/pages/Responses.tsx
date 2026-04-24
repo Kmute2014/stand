@@ -3,13 +3,13 @@ import { useAppContext } from '../store';
 import {
   Plus, Calendar, Search, Filter, ChevronDown, ChevronUp,
   Users, Smile, AlertTriangle, Clock, TrendingUp, BarChart3,
-  X, Eye, Download, RefreshCw
+  X, Eye, Download, RefreshCw, Edit, Trash2
 } from 'lucide-react';
 import { DatePreviewModal } from '../components/DatePreviewModal';
 import { StandupResponse } from '../types';
 
 export const Responses: React.FC = () => {
-  const { responses, users, deleteResponse, setEditingResponse, setCurrentPage } = useAppContext();
+  const { responses, users, deleteResponse, setEditingResponse, setCurrentPage, currentUser } = useAppContext();
 
   // State management
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -151,9 +151,9 @@ export const Responses: React.FC = () => {
           <div className="ph-actions">
             <button
               className="btn btn-sm btn-primary flex items-center gap-2"
-              onClick={() => setCurrentPage('standup')}
+              onClick={() => setEditingResponse({} as any)}
             >
-              <Plus className="w-3.5 h-3.5" /> New Response
+              <Plus className="w-3.5 h-3.5" /> New StandUp Today
             </button>
             <button className="btn btn-sm flex items-center gap-2">
               <Download className="w-3.5 h-3.5" /> Export
@@ -315,6 +315,22 @@ export const Responses: React.FC = () => {
                                 <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-sm font-medium">
                                   Blocker
                                 </span>
+                              )}
+                              <button
+                                onClick={() => setEditingResponse(response)}
+                                className="flex items-center gap-1 px-2 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit response"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              {currentUser?.role === 'Admin' && (
+                                <button
+                                  onClick={() => { if (window.confirm('Delete this standup response?')) deleteResponse(response.id); }}
+                                  className="flex items-center gap-1 px-2 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete response"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
                               )}
                             </div>
                           </div>

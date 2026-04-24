@@ -11,13 +11,13 @@ import { Responses } from './pages/Responses';
 import { TeamMood } from './pages/TeamMood';
 import { UsersPage } from './pages/Users';
 import { SchedulePage } from './pages/Schedule';
-import { StandupForm } from './pages/StandupForm';
 import { MyHistory } from './pages/MyHistory';
 import { Settings } from './components/Settings';
 import { AuthPage } from './pages/AuthPage';
 import { AddUserModal } from './components/AddUserModal';
 import { EditUserModal } from './components/EditUserModal';
 import { EditResponseModal } from './components/EditResponseModal';
+import { MissedStandupReminder } from './components/MissedStandupReminder';
 import { Toast } from './components/Toast';
 
 export default function App() {
@@ -43,7 +43,6 @@ export default function App() {
           {currentPage === 'mood' && <TeamMood />}
           {currentPage === 'users' && <UsersPage />}
           {currentPage === 'schedule' && <SchedulePage />}
-          {currentPage === 'standup' && <StandupForm />}
           {currentPage === 'myhistory' && <MyHistory />}
           {currentPage === 'settings' && <Settings />}
         </div>
@@ -51,6 +50,7 @@ export default function App() {
       <AddUserModal />
       <EditUserModal />
       <EditResponseModal />
+      <MissedStandupReminder />
       <Toast />
     </div>
   );
