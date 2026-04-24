@@ -6,7 +6,7 @@ export const EditUserModal: React.FC = () => {
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'User' | 'Admin'>('User');
+  const [role, setRole] = useState<'User' | 'Project Manager/Scrum Master' | 'Admin'>('User');
   const [status, setStatus] = useState<'Active' | 'Pending'>('Active');
 
   // Check if current user is admin
@@ -86,6 +86,7 @@ export const EditUserModal: React.FC = () => {
               <label className="form-label">Role</label>
               <select className="form-input form-select" value={role} onChange={e => setRole(e.target.value as any)}>
                 <option value="User">User</option>
+                <option value="Project Manager/Scrum Master">Project Manager/Scrum Master</option>
                 <option value="Admin">Admin</option>
               </select>
             </div>

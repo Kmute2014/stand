@@ -1,13 +1,68 @@
-export type Status = 'Not Started' | 'In Progress' | 'Completed';
+export type Status = 'Product Backlog' | 'Refined Backlog' | 'In Progress' | 'Testing' | 'Completed';
 
 export type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
+
+export type UserRole = 'Project Manager/Scrum Master' | 'User';
+
+export type Permission = 'create' | 'read' | 'update' | 'delete';
+
+export interface RolePermissions {
+  canCreate: boolean;
+  canRead: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+}
 
 export interface User {
   id: string;
   name: string;
   email: string;
   avatar?: string;
+  role: UserRole;
 }
+
+// Permission checking utility
+export const getRolePermissions = (role: UserRole): RolePermissions => {
+  switch (role) {
+    case 'Project Manager/Scrum Master':
+      return {
+        canCreate: true,
+        canRead: true,
+        canUpdate: true,
+        canDelete: true,
+      };
+    case 'User':
+      return {
+        canCreate: true,
+        canRead: true,
+        canUpdate: true,
+        canDelete: false,
+      };
+    default:
+      return {
+        canCreate: false,
+        canRead: false,
+        canUpdate: false,
+        canDelete: false,
+      };
+  }
+};
+
+export const hasPermission = (user: User, permission: Permission): boolean => {
+  const permissions = getRolePermissions(user.role);
+  switch (permission) {
+    case 'create':
+      return permissions.canCreate;
+    case 'read':
+      return permissions.canRead;
+    case 'update':
+      return permissions.canUpdate;
+    case 'delete':
+      return permissions.canDelete;
+    default:
+      return false;
+  }
+};
 
 export interface Subtask {
   id: string;

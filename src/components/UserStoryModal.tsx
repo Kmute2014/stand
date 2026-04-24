@@ -33,13 +33,11 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
     description: '',
     priority: 'Medium' as Priority,
     assignees: [] as User[],
-    dueDate: '',
     subtasks: [] as Subtask[],
   });
 
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSubtaskAssignee, setNewSubtaskAssignee] = useState<User | null>(null);
-  const [newSubtaskDueDate, setNewSubtaskDueDate] = useState('');
   const [newComment, setNewComment] = useState('');
   const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null);
 
@@ -56,7 +54,6 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
         description: userStory.description,
         priority: userStory.priority,
         assignees: userStory.assignees,
-        dueDate: userStory.dueDate ? userStory.dueDate.toISOString().split('T')[0] : '',
         subtasks: userStory.subtasks,
       });
     } else {
@@ -65,7 +62,6 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
         description: '',
         priority: 'Medium',
         assignees: [],
-        dueDate: '',
         subtasks: [],
       });
     }
@@ -76,7 +72,6 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
 
     const userStoryData = {
       ...formData,
-      dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
       columnId,
       epicId,
       sprintId,
@@ -103,7 +98,6 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
         title: newSubtaskTitle.trim(),
         completed: false,
         assignee: newSubtaskAssignee || undefined,
-        dueDate: newSubtaskDueDate ? new Date(newSubtaskDueDate) : undefined,
         comments: [],
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -115,7 +109,6 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
       });
       setNewSubtaskTitle('');
       setNewSubtaskAssignee(null);
-      setNewSubtaskDueDate('');
     }
   };
 
@@ -254,14 +247,14 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
+                Acceptance Criteria
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
-                placeholder="User story description..."
+                placeholder="Define acceptance criteria for this user story..."
               />
             </div>
 
@@ -279,18 +272,6 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
                 <option value="High">High</option>
                 <option value="Critical">Critical</option>
               </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Due Date
-              </label>
-              <input
-                type="date"
-                value={formData.dueDate}
-                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
             </div>
 
             <div>
@@ -332,13 +313,6 @@ export const UserStoryModal: React.FC<UserStoryModalProps> = ({
                         </option>
                       ))}
                     </select>
-                    <input
-                      type="date"
-                      value={newSubtaskDueDate}
-                      onChange={(e) => setNewSubtaskDueDate(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Due date"
-                    />
                   </div>
                   <button
                     type="button"

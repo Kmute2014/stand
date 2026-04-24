@@ -8,7 +8,7 @@ export const AddUserModal: React.FC = () => {
   const { addUser, showToast, currentUser } = useAppContext();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'User' | 'Admin'>('User');
+  const [role, setRole] = useState<'User' | 'Project Manager/Scrum Master' | 'Admin'>('User');
   const [isLoading, setIsLoading] = useState(false);
 
   // Check if current user is admin
@@ -151,6 +151,7 @@ export const AddUserModal: React.FC = () => {
               <label className="form-label">Role</label>
               <select className="form-input form-select" value={role} onChange={e => setRole(e.target.value as any)} disabled={!isAdmin || isLoading}>
                 <option value="User">User</option>
+                <option value="Project Manager/Scrum Master">Project Manager/Scrum Master</option>
                 <option value="Admin">Admin</option>
               </select>
             </div>

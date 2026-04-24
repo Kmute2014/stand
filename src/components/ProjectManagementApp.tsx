@@ -593,6 +593,10 @@ export const ProjectManagementApp: React.FC = () => {
           onBack={handleBack}
           onShowGantt={handleShowGantt}
           onCompleteSprint={handleCompleteSprint}
+          onCreateUserStory={handleCreateUserStory}
+          onUpdateUserStory={handleUpdateUserStory}
+          onDeleteUserStory={handleDeleteUserStory}
+          onUpdateEpic={handleUpdateEpic}
         />
       )}
 
