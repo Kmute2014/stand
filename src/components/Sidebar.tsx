@@ -17,8 +17,6 @@ export const Sidebar: React.FC = () => {
     {
       group: 'Overview', items: [
         { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4 opacity-80 current-icon" /> },
-        { id: 'responses', label: 'Responses', icon: <MessageSquare className="w-4 h-4 opacity-80 current-icon" />, badge: '3' },
-        { id: 'mood', label: 'Team Mood', icon: <Smile className="w-4 h-4 opacity-80 current-icon" /> },
       ]
     },
     {
@@ -37,6 +35,8 @@ export const Sidebar: React.FC = () => {
       group: 'My Standup', items: [
         { id: 'standup', label: 'Submit Today', icon: <Edit3 className="w-4 h-4 opacity-80 current-icon" /> },
         { id: 'myhistory', label: 'My History', icon: <History className="w-4 h-4 opacity-80 current-icon" /> },
+        { id: 'responses', label: 'Responses', icon: <MessageSquare className="w-4 h-4 opacity-80 current-icon" />, badge: '3' },
+        { id: 'mood', label: 'Team Mood', icon: <Smile className="w-4 h-4 opacity-80 current-icon" /> },
       ]
     },
     {
@@ -70,10 +70,10 @@ export const Sidebar: React.FC = () => {
         <div className="p-6 border-b border-slate-800">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-lg shrink-0">
-              S
+              P
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">StandUpPhelo</h1>
+              <h1 className="text-xl font-bold tracking-tight">Project Phelo</h1>
             </div>
           </div>
         </div>

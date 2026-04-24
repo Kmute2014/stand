@@ -100,8 +100,12 @@ export const SprintManager: React.FC<SprintManagerProps> = ({
         return 'bg-green-100 text-green-800';
       case 'In Progress':
         return 'bg-blue-100 text-blue-800';
-      case 'Not Started':
+      case 'Product Backlog':
         return 'bg-gray-100 text-gray-800';
+      case 'Refined Backlog':
+        return 'bg-purple-100 text-purple-800';
+      case 'Testing':
+        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -142,19 +146,31 @@ export const SprintManager: React.FC<SprintManagerProps> = ({
   };
 
   const handleCreateUserStoryForEpic = (userStory: Omit<UserStory, 'id' | 'createdAt' | 'updatedAt'>) => {
+    console.log('handleCreateUserStoryForEpic called with:', userStory);
+    console.log('selectedEpic:', selectedEpic);
+
     if (selectedEpic) {
-      // Find the first column (To Do) of the selected epic
-      const firstColumn = selectedEpic.columns.find(col => col.order === 0);
-      if (firstColumn) {
-        onCreateUserStory({
+      console.log('selectedEpic.columns:', selectedEpic.columns);
+      // Find the Product Backlog column of the selected epic
+      const productBacklogColumn = selectedEpic.columns.find(col => col.name === 'Product Backlog');
+      console.log('productBacklogColumn found:', productBacklogColumn);
+
+      if (productBacklogColumn) {
+        const storyWithIds = {
           ...userStory,
-          columnId: firstColumn.id,
+          columnId: productBacklogColumn.id,
           epicId: selectedEpic.id,
           sprintId: sprint.id,
           projectId: sprint.projectId,
           programId: sprint.programId,
-        });
+        };
+        console.log('Calling onCreateUserStory with:', storyWithIds);
+        onCreateUserStory(storyWithIds);
+      } else {
+        console.error('Product Backlog column not found in epic:', selectedEpic.columns.map(col => col.name));
       }
+    } else {
+      console.error('No selected epic');
     }
   };
 
@@ -281,14 +297,28 @@ export const SprintManager: React.FC<SprintManagerProps> = ({
             </button>
           </div>
 
-          <UserStoryManager
-            epicName={selectedEpic.name}
-            userStories={getAllUserStories().filter(story => story.epicId === selectedEpic.id)}
-            currentUser={currentUser}
-            onCreateUserStory={handleCreateUserStoryForEpic}
-            onUpdateUserStory={onUpdateUserStory}
-            onDeleteUserStory={onDeleteUserStory}
-          />
+          {(() => {
+            console.log('SprintManager - passing to UserStoryManager:', {
+              currentUser,
+              currentUserRole: currentUser?.role,
+              selectedEpic: selectedEpic?.name,
+              userStoriesCount: selectedEpic.columns.flatMap(column => column.userStories).length
+            });
+            return (
+              <UserStoryManager
+                epicName={selectedEpic.name}
+                epicId={selectedEpic.id}
+                sprintId={sprint.id}
+                projectId={sprint.projectId}
+                programId={sprint.programId}
+                userStories={selectedEpic.columns.flatMap(column => column.userStories)}
+                currentUser={currentUser}
+                onCreateUserStory={handleCreateUserStoryForEpic}
+                onUpdateUserStory={onUpdateUserStory}
+                onDeleteUserStory={onDeleteUserStory}
+              />
+            );
+          })()}
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto">

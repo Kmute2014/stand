@@ -26,6 +26,7 @@ interface EpicKanbanBoardProps {
   sprintName: string;
   projectName: string;
   programName: string;
+  currentUser: any;
   onBack: () => void;
   onUpdateEpic: (epic: Epic) => void;
   onCreateUserStory: (userStory: Omit<UserStory, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -39,6 +40,7 @@ export const EpicKanbanBoard: React.FC<EpicKanbanBoardProps> = ({
   sprintName,
   projectName,
   programName,
+  currentUser,
   onBack,
   onUpdateEpic,
   onCreateUserStory,

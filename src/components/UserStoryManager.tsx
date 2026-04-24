@@ -19,6 +19,10 @@ import { UserStoryModal } from './UserStoryModal';
 
 interface UserStoryManagerProps {
   epicName: string;
+  epicId: string;
+  sprintId: string;
+  projectId: string;
+  programId: string;
   userStories: UserStory[];
   currentUser: User;
   onCreateUserStory: (userStory: Omit<UserStory, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -28,6 +32,10 @@ interface UserStoryManagerProps {
 
 export const UserStoryManager: React.FC<UserStoryManagerProps> = ({
   epicName,
+  epicId,
+  sprintId,
+  projectId,
+  programId,
   userStories,
   currentUser,
   onCreateUserStory,
@@ -37,6 +45,12 @@ export const UserStoryManager: React.FC<UserStoryManagerProps> = ({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingStory, setEditingStory] = useState<UserStory | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState<string | null>(null);
+
+  // Debug: Check currentUser and permissions
+  console.log('UserStoryManager - currentUser:', currentUser);
+  console.log('UserStoryManager - hasPermission update:', hasPermission(currentUser, 'update'));
+  console.log('UserStoryManager - userStories count:', userStories.length);
+  console.log('UserStoryManager - userStories data:', userStories);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -52,6 +66,15 @@ export const UserStoryManager: React.FC<UserStoryManagerProps> = ({
   const inProgressStories = userStories.filter(story => story.status === 'In Progress');
   const testingStories = userStories.filter(story => story.status === 'Testing');
   const completedStories = userStories.filter(story => story.status === 'Completed');
+
+  console.log('Status column debug:', {
+    totalUserStories: userStories.length,
+    productBacklogStories: productBacklogStories.length,
+    refinedBacklogStories: refinedBacklogStories.length,
+    inProgressStories: inProgressStories.length,
+    testingStories: testingStories.length,
+    completedStories: completedStories.length
+  });
 
   const getStatusIcon = (status: Status) => {
     switch (status) {
@@ -137,12 +160,16 @@ export const UserStoryManager: React.FC<UserStoryManagerProps> = ({
   };
 
   const handleCreateStory = (userStory: Omit<UserStory, 'id' | 'createdAt' | 'updatedAt'>) => {
-    // Ensure new stories start in Product Backlog
-    const storyWithStatus = {
+    // Ensure new stories start in Product Backlog with proper IDs
+    const storyWithStatusAndIds = {
       ...userStory,
       status: 'Product Backlog' as Status,
+      epicId,
+      sprintId,
+      projectId,
+      programId,
     };
-    onCreateUserStory(storyWithStatus);
+    onCreateUserStory(storyWithStatusAndIds);
     setShowCreateModal(false);
   };
 
@@ -164,6 +191,7 @@ export const UserStoryManager: React.FC<UserStoryManagerProps> = ({
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
+    console.log('Drag start triggered for story:', active.id);
     // Story is identified by active.id, no need to track draggedStory state
   };
 
@@ -302,18 +330,29 @@ export const UserStoryManager: React.FC<UserStoryManagerProps> = ({
                 <Edit className="w-4 h-4 text-gray-500 hover:text-blue-600" />
               </button>
             )}
-            {hasPermission(currentUser, 'delete') && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteUserStory(story.id);
-                }}
-                className="p-1 hover:bg-white rounded transition-colors"
-                title="Delete story"
-              >
-                <Trash2 className="w-4 h-4 text-red-500" />
-              </button>
-            )}
+            {(() => {
+              const shouldShowDelete = hasPermission(currentUser, 'delete');
+              console.log(`Delete button debug for story "${story.title}":`, {
+                storyTitle: story.title,
+                currentUser,
+                currentUserRole: currentUser?.role,
+                hasDeletePermission: shouldShowDelete,
+                shouldShowDelete
+              });
+              return shouldShowDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('Delete button clicked for story:', story.id);
+                    onDeleteUserStory(story.id);
+                  }}
+                  className="p-1 hover:bg-white rounded transition-colors"
+                  title="Delete story"
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </button>
+              );
+            })()}
             <button
               onClick={(e) => e.stopPropagation()}
               className="p-1 hover:bg-white rounded transition-colors"
@@ -448,15 +487,26 @@ export const UserStoryManager: React.FC<UserStoryManagerProps> = ({
             <h3 className="font-semibold text-gray-900">{title}</h3>
             <span className="text-sm text-gray-500">({stories.length})</span>
           </div>
-          {status === 'Product Backlog' && hasPermission(currentUser, 'create') && (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Add Story
-            </button>
-          )}
+          {(() => {
+            const shouldShow = status === 'Product Backlog' && hasPermission(currentUser, 'create');
+            console.log(`Add Story button debug for column "${title}":`, {
+              title,
+              status,
+              isProductBacklog: status === 'Product Backlog',
+              currentUser,
+              hasCreatePermission: hasPermission(currentUser, 'create'),
+              shouldShow
+            });
+            return shouldShow && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Story
+              </button>
+            );
+          })()}
         </div>
 
         <div className={`space-y-3 min-h-[200px] rounded-lg p-2 transition-colors duration-200 ${isDropTarget ? 'border-2 border-dashed border-blue-400 bg-blue-50' : ''
@@ -498,13 +548,6 @@ export const UserStoryManager: React.FC<UserStoryManagerProps> = ({
             {userStories.length} total stories • {completedStories.length} completed
           </p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Add Story
-        </button>
       </div>
 
       {/* Progress Overview */}
@@ -576,11 +619,11 @@ export const UserStoryManager: React.FC<UserStoryManagerProps> = ({
       {showCreateModal && (
         <UserStoryModal
           userStory={null}
-          columnId="" // Will be set by the modal
-          epicId="" // Will be set by the modal
-          sprintId="" // Will be set by the modal
-          projectId="" // Will be set by the modal
-          programId="" // Will be set by the modal
+          columnId="" // Will be set by handleCreateStory
+          epicId="" // Will be set by handleCreateStory
+          sprintId="" // Will be set by handleCreateStory
+          projectId="" // Will be set by handleCreateStory
+          programId="" // Will be set by handleCreateStory
           onCreate={handleCreateStory}
           onUpdate={handleUpdateStory}
           onCancel={() => setShowCreateModal(false)}

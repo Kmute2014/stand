@@ -2,7 +2,7 @@ export type Status = 'Product Backlog' | 'Refined Backlog' | 'In Progress' | 'Te
 
 export type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
 
-export type UserRole = 'Project Manager/Scrum Master' | 'User';
+export type UserRole = 'Admin' | 'Project Manager/Scrum Master' | 'User';
 
 export type Permission = 'create' | 'read' | 'update' | 'delete';
 
@@ -24,6 +24,13 @@ export interface User {
 // Permission checking utility
 export const getRolePermissions = (role: UserRole): RolePermissions => {
   switch (role) {
+    case 'Admin':
+      return {
+        canCreate: true,
+        canRead: true,
+        canUpdate: true,
+        canDelete: true,
+      };
     case 'Project Manager/Scrum Master':
       return {
         canCreate: true,
@@ -48,7 +55,10 @@ export const getRolePermissions = (role: UserRole): RolePermissions => {
   }
 };
 
-export const hasPermission = (user: User, permission: Permission): boolean => {
+export const hasPermission = (user: User | undefined, permission: Permission): boolean => {
+  if (!user) {
+    return false;
+  }
   const permissions = getRolePermissions(user.role);
   switch (permission) {
     case 'create':

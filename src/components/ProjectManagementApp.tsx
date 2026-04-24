@@ -15,7 +15,7 @@ import { GanttChart } from './GanttChart';
 type ViewType = 'programs' | 'program-detail' | 'project' | 'sprint' | 'epic' | 'gantt';
 
 export const ProjectManagementApp: React.FC = () => {
-  const { users } = useAppContext();
+  const { users, currentUser } = useAppContext();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [currentView, setCurrentView] = useState<ViewType>('programs');
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
@@ -62,57 +62,20 @@ export const ProjectManagementApp: React.FC = () => {
                     programId: '',
                     columns: [
                       {
-                        id: 'col-todo',
-                        name: 'To Do',
+                        id: 'col-product-backlog',
+                        name: 'Product Backlog',
                         order: 0,
                         epicId: '',
                         sprintId: '',
                         projectId: '',
                         programId: '',
-                        userStories: [
-                          {
-                            id: uuidv4(),
-                            title: 'Employee Onboarding',
-                            description: 'Create employee onboarding workflow',
-                            priority: 'High',
-                            status: 'In Progress',
-                            assignees: [
-                              { id: '1', name: 'John Doe', email: 'john@example.com' },
-                            ],
-                            dueDate: new Date('2024-01-10'),
-                            subtasks: [
-                              {
-                                id: uuidv4(),
-                                title: 'Create onboarding checklist',
-                                completed: false,
-                                comments: [],
-                                createdAt: new Date(),
-                                updatedAt: new Date(),
-                              },
-                              {
-                                id: uuidv4(),
-                                title: 'Set up email templates',
-                                completed: true,
-                                comments: [],
-                                createdAt: new Date(),
-                                updatedAt: new Date(),
-                              },
-                            ],
-                            columnId: 'col-todo',
-                            epicId: '',
-                            sprintId: '',
-                            projectId: '',
-                            programId: '',
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                          },
-                        ],
+                        userStories: [],
                         createdAt: new Date(),
                         updatedAt: new Date(),
                       },
                       {
-                        id: 'col-progress',
-                        name: 'In Progress',
+                        id: 'col-refined-backlog',
+                        name: 'Refined Backlog',
                         order: 1,
                         epicId: '',
                         sprintId: '',
@@ -123,9 +86,33 @@ export const ProjectManagementApp: React.FC = () => {
                         updatedAt: new Date(),
                       },
                       {
-                        id: 'col-done',
-                        name: 'Done',
+                        id: 'col-in-progress',
+                        name: 'In Progress',
                         order: 2,
+                        epicId: '',
+                        sprintId: '',
+                        projectId: '',
+                        programId: '',
+                        userStories: [],
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                      },
+                      {
+                        id: 'col-testing',
+                        name: 'Testing',
+                        order: 3,
+                        epicId: '',
+                        sprintId: '',
+                        projectId: '',
+                        programId: '',
+                        userStories: [],
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                      },
+                      {
+                        id: 'col-completed',
+                        name: 'Completed',
+                        order: 4,
                         epicId: '',
                         sprintId: '',
                         projectId: '',
@@ -189,6 +176,15 @@ export const ProjectManagementApp: React.FC = () => {
 
     setPrograms(processedData);
   }, []);
+
+  // Debug: Track programs state changes
+  useEffect(() => {
+    console.log('ProjectManagementApp - programs state changed:', programs.length, 'programs');
+    console.log('ProjectManagementApp - currentView:', currentView);
+    console.log('ProjectManagementApp - selectedProgramId:', selectedProgramId);
+    console.log('ProjectManagementApp - selectedProjectId:', selectedProjectId);
+    console.log('ProjectManagementApp - selectedSprintId:', selectedSprintId);
+  }, [programs, currentView, selectedProgramId, selectedProjectId, selectedSprintId]);
 
   const selectedProgram = programs.find(p => p.id === selectedProgramId);
   const selectedProject = selectedProgram?.projects.find(p => p.id === selectedProjectId);
@@ -280,14 +276,16 @@ export const ProjectManagementApp: React.FC = () => {
   };
 
   const handleCreateUserStory = (userStoryData: Omit<UserStory, 'id' | 'createdAt' | 'updatedAt'>) => {
+    console.log('Creating user story with data:', userStoryData);
     const newUserStory: UserStory = {
       ...userStoryData,
       id: uuidv4(),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    console.log('New user story created:', newUserStory);
 
-    setPrograms(programs.map(program => ({
+    const updatedPrograms = programs.map(program => ({
       ...program,
       projects: program.projects.map(project =>
         project.id === userStoryData.projectId
@@ -322,7 +320,12 @@ export const ProjectManagementApp: React.FC = () => {
           }
           : project
       ),
-    })));
+    }));
+
+    console.log('Updated programs:', updatedPrograms);
+    console.log('About to setPrograms with', updatedPrograms.length, 'programs');
+    setPrograms(updatedPrograms);
+    console.log('setPrograms called');
   };
 
   const handleUpdateEpic = (updatedEpic: Epic) => {
@@ -392,8 +395,8 @@ export const ProjectManagementApp: React.FC = () => {
   };
 
   const handleDeleteUserStory = (userStoryId: string) => {
-    // Find and remove the user story from the appropriate column
-    setPrograms(programs.map(program => ({
+    console.log('Deleting user story:', userStoryId);
+    const updatedPrograms = programs.map(program => ({
       ...program,
       projects: program.projects.map(project => ({
         ...project,
@@ -408,7 +411,10 @@ export const ProjectManagementApp: React.FC = () => {
           })),
         })),
       })),
-    })));
+    }));
+    console.log('About to setPrograms after delete with', updatedPrograms.length, 'programs');
+    setPrograms(updatedPrograms);
+    console.log('setPrograms called for delete');
   };
 
   const handleCompleteSprint = (sprintId: string) => {
@@ -588,6 +594,7 @@ export const ProjectManagementApp: React.FC = () => {
           sprint={selectedProject.sprints.find(s => s.id === selectedSprintId)!}
           projectName={selectedProject.name}
           programName={selectedProgram?.name || ''}
+          currentUser={currentUser}
           onCreateEpic={handleCreateEpic}
           onSelectEpic={handleSelectEpic}
           onBack={handleBack}
@@ -606,6 +613,7 @@ export const ProjectManagementApp: React.FC = () => {
           sprintName={selectedSprint?.name || ''}
           projectName={selectedProject?.name || ''}
           programName={selectedProgram?.name || ''}
+          currentUser={currentUser}
           onBack={handleBack}
           onUpdateEpic={handleUpdateEpic}
           onCreateUserStory={handleCreateUserStory}

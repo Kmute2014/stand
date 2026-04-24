@@ -1,10 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../store';
-import { CheckCircle2, CircleDashed, AlertTriangle, Smile } from 'lucide-react';
+import {
+  CheckCircle2, CircleDashed, AlertTriangle, Smile, TrendingUp,
+  Activity, Users, Target, Clock, BarChart3, PieChart, ArrowUp,
+  ArrowDown, MoreHorizontal, Calendar, Filter, RefreshCw
+} from 'lucide-react';
+import { UserStory, Status, Priority, Epic, Sprint } from '../types/project';
 
 export const Dashboard: React.FC = () => {
   const { currentUser, responses, users, sendReminders } = useAppContext();
   const isAdmin = currentUser?.role === 'Admin';
+
+  // Mock project data - in real app this would come from props or context
+  const [mockUserStories] = useState<UserStory[]>([
+    { id: '1', title: 'User Authentication', status: 'Completed', priority: 'High', assignees: [], subtasks: [], createdAt: new Date(), updatedAt: new Date() },
+    { id: '2', title: 'Dashboard UI', status: 'In Progress', priority: 'Medium', assignees: [], subtasks: [], createdAt: new Date(), updatedAt: new Date() },
+    { id: '3', title: 'API Integration', status: 'Refined Backlog', priority: 'Critical', assignees: [], subtasks: [], createdAt: new Date(), updatedAt: new Date() },
+    { id: '4', title: 'Testing Framework', status: 'Testing', priority: 'Low', assignees: [], subtasks: [], createdAt: new Date(), updatedAt: new Date() },
+    { id: '5', title: 'Documentation', status: 'Product Backlog', priority: 'Medium', assignees: [], subtasks: [], createdAt: new Date(), updatedAt: new Date() },
+  ]);
+
+  const [mockEpics] = useState<Epic[]>([
+    { id: '1', name: 'Authentication System', description: 'User login and security', order: 1, columns: [], createdAt: new Date(), updatedAt: new Date() },
+    { id: '2', name: 'Dashboard Development', description: 'Main dashboard features', order: 2, columns: [], createdAt: new Date(), updatedAt: new Date() },
+  ]);
+
+  const [mockSprints] = useState<Sprint[]>([
+    { id: '1', name: 'Sprint 1', startDate: new Date(), endDate: new Date(), epics: [], createdAt: new Date(), updatedAt: new Date() },
+  ]);
 
   const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   const pendingUsers = users.filter(u => u.status === 'Active' && !u.lastStandup?.includes('Today'));
@@ -14,188 +37,352 @@ export const Dashboard: React.FC = () => {
   const moodSum = responses.reduce((acc, curr) => acc + curr.mood.score, 0);
   const avgMood = responses.length > 0 ? (moodSum / responses.length).toFixed(1) : '—';
 
+  // Project Management Metrics
+  const getStatusCounts = () => {
+    const counts = {
+      completed: mockUserStories.filter(s => s.status === 'Completed').length,
+      inProgress: mockUserStories.filter(s => s.status === 'In Progress').length,
+      refined: mockUserStories.filter(s => s.status === 'Refined Backlog').length,
+      testing: mockUserStories.filter(s => s.status === 'Testing').length,
+      productBacklog: mockUserStories.filter(s => s.status === 'Product Backlog').length,
+    };
+    return counts;
+  };
+
+  const getPriorityBreakdown = () => {
+    const breakdown = {
+      critical: mockUserStories.filter(s => s.priority === 'Critical').length,
+      high: mockUserStories.filter(s => s.priority === 'High').length,
+      medium: mockUserStories.filter(s => s.priority === 'Medium').length,
+      low: mockUserStories.filter(s => s.priority === 'Low').length,
+    };
+    return breakdown;
+  };
+
+  const getCompletionRate = () => {
+    const total = mockUserStories.length;
+    const completed = mockUserStories.filter(s => s.status === 'Completed').length;
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
+  };
+
+  const getRecentActivities = () => {
+    // Mock recent activities - in real app this would come from actual activity logs
+    return [
+      { id: '1', type: 'standup', user: 'John Doe', action: 'Submitted daily standup', time: '2 hours ago', icon: <CheckCircle2 className="w-4 h-4" /> },
+      { id: '2', type: 'blocker', user: 'Jane Smith', action: 'Reported blocker: API timeout issues', time: '3 hours ago', icon: <AlertTriangle className="w-4 h-4" /> },
+      { id: '3', type: 'task', user: 'Mike Johnson', action: 'Moved "User Authentication" to Completed', time: '5 hours ago', icon: <Target className="w-4 h-4" /> },
+      { id: '4', type: 'standup', user: 'Sarah Williams', action: 'Submitted daily standup', time: '6 hours ago', icon: <CheckCircle2 className="w-4 h-4" /> },
+    ];
+  };
+
+  const statusCounts = getStatusCounts();
+  const priorityBreakdown = getPriorityBreakdown();
+  const completionRate = getCompletionRate();
+  const recentActivities = getRecentActivities();
+
   return (
     <div className="page active">
       <div className="ph">
         <div className="ph-row">
           <div>
             <div className="ph-title">Good morning, {currentUser?.name.split(' ')[0] || 'User'}.</div>
-            <div className="ph-sub">// Monday standup · {responses.length} of {users.length} submitted · {activeBlockers.length} active blockers</div>
+            <div className="ph-sub">// Project Overview · {mockUserStories.length} total tasks · {completionRate}% completion rate</div>
+          </div>
+          <div className="flex gap-2">
+            <button className="btn btn-ghost btn-sm">
+              <Calendar className="w-4 h-4" />
+              Today
+            </button>
+            <button className="btn btn-ghost btn-sm">
+              <Filter className="w-4 h-4" />
+              Filter
+            </button>
+            <button className="btn btn-ghost btn-sm">
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
           </div>
         </div>
       </div>
 
+      {/* Top Stats Row */}
       <div className="grid grid-cols-4 gap-6 mb-6">
         <div className="card relative overflow-hidden p-6 border-b-[3px] border-b-blue-600">
           <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-4">
             <CheckCircle2 className="w-[20px] h-[20px] text-blue-600" />
           </div>
-          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{responses.length}</div>
-          <div className="text-sm text-slate-600 font-medium">Submitted today</div>
-          <div className="text-xs text-slate-400 mt-1">of {users.length} team members</div>
+          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{statusCounts.completed}</div>
+          <div className="text-sm text-slate-600 font-medium">Completed Tasks</div>
+          <div className="text-xs text-slate-400 mt-1">of {mockUserStories.length} total tasks</div>
         </div>
         <div className="card relative overflow-hidden p-6 border-b-[3px] border-b-amber-500">
           <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center mb-4">
-            <CircleDashed className="w-[20px] h-[20px] text-amber-500" />
+            <Activity className="w-[20px] h-[20px] text-amber-500" />
           </div>
-          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{pendingUsers.length}</div>
-          <div className="text-sm text-slate-600 font-medium">Pending</div>
-          <div className="text-xs text-slate-400 mt-1">not yet responded</div>
+          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{statusCounts.inProgress}</div>
+          <div className="text-sm text-slate-600 font-medium">In Progress</div>
+          <div className="text-xs text-slate-400 mt-1">actively being worked on</div>
         </div>
-        <div className="card relative overflow-hidden p-6 border-b-[3px] border-b-rose-500">
-          <div className="w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center mb-4">
-            <AlertTriangle className="w-[20px] h-[20px] text-rose-500" />
+        <div className="card relative overflow-hidden p-6 border-b-[3px] border-b-purple-500">
+          <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center mb-4">
+            <Target className="w-[20px] h-[20px] text-purple-500" />
           </div>
-          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{activeBlockers.length}</div>
-          <div className="text-sm text-slate-600 font-medium">Active blockers</div>
-          <div className="text-xs text-rose-500 font-medium mt-1">admin notified</div>
+          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{statusCounts.refined}</div>
+          <div className="text-sm text-slate-600 font-medium">Refined Backlog</div>
+          <div className="text-xs text-slate-400 mt-1">ready for development</div>
         </div>
-        <div className="card relative overflow-hidden p-6 border-b-[3px] border-b-emerald-500">
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center mb-4">
-            <Smile className="w-[20px] h-[20px] text-emerald-500" />
+        <div className="card relative overflow-hidden p-6 border-b-[3px] border-b-green-500">
+          <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center mb-4">
+            <TrendingUp className="w-[20px] h-[20px] text-green-500" />
           </div>
-          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{avgMood}</div>
-          <div className="text-sm text-slate-600 font-medium">Team mood avg</div>
-          <div className="text-xs text-emerald-600 font-medium mt-1">↑ good energy today</div>
+          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{completionRate}%</div>
+          <div className="text-sm text-slate-600 font-medium">Completion Rate</div>
+          <div className="text-xs text-green-600 font-medium mt-1">↑ 5% from last week</div>
         </div>
       </div>
 
-      <div className="grid-3-2">
-        {/* Submissions Table */}
-        <div className="card h-fit">
+      {/* Second Row - Priority Breakdown & Recent Activity */}
+      <div className="grid grid-cols-3 gap-6 mb-6">
+        {/* Priority Breakdown */}
+        <div className="card">
+          <div className="card-h">
+            <span className="card-title">
+              <BarChart3 className="w-4 h-4 text-[var(--text-3)]" />
+              Priority Breakdown
+            </span>
+            <button className="btn btn-ghost btn-sm">
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="card-body">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <span className="text-sm font-medium">Critical</span>
+                </div>
+                <span className="text-lg font-bold">{priorityBreakdown.critical}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                  <span className="text-sm font-medium">High</span>
+                </div>
+                <span className="text-lg font-bold">{priorityBreakdown.high}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                  <span className="text-sm font-medium">Medium</span>
+                </div>
+                <span className="text-lg font-bold">{priorityBreakdown.medium}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-sm font-medium">Low</span>
+                </div>
+                <span className="text-lg font-bold">{priorityBreakdown.low}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="card col-span-2">
+          <div className="card-h">
+            <span className="card-title">
+              <Clock className="w-4 h-4 text-[var(--text-3)]" />
+              Recent Activity
+            </span>
+            <span className="badge b-neutral">Last 24 hours</span>
+          </div>
+          <div className="card-body">
+            <div className="space-y-3">
+              {recentActivities.map((activity) => (
+                <div key={activity.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-blue-600">
+                    {activity.icon}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">{activity.user}</div>
+                    <div className="text-xs text-slate-600">{activity.action}</div>
+                  </div>
+                  <span className="text-xs text-slate-400">{activity.time}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Third Row - Epic & Sprint Progress */}
+      <div className="grid grid-cols-2 gap-6 mb-6">
+        {/* Epic Progress */}
+        <div className="card">
+          <div className="card-h">
+            <span className="card-title">
+              <Target className="w-4 h-4 text-[var(--text-3)]" />
+              Epic Progress
+            </span>
+            <button className="btn btn-sm btn-primary">View All</button>
+          </div>
+          <div className="card-body">
+            <div className="space-y-4">
+              {mockEpics.map((epic) => (
+                <div key={epic.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">{epic.name}</h4>
+                    <span className="text-sm text-slate-600">75%</span>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-2">
+                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">{epic.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Sprint Progress */}
+        <div className="card">
+          <div className="card-h">
+            <span className="card-title">
+              <Clock className="w-4 h-4 text-[var(--text-3)]" />
+              Sprint Progress
+            </span>
+            <span className="badge b-green">Active</span>
+          </div>
+          <div className="card-body">
+            <div className="space-y-4">
+              {mockSprints.map((sprint) => (
+                <div key={sprint.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">{sprint.name}</h4>
+                    <span className="text-sm text-slate-600">60%</span>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-2">
+                    <div className="bg-green-600 h-2 rounded-full" style={{ width: '60%' }}></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-slate-500 mt-2">
+                    <span>Started: {sprint.startDate.toLocaleDateString()}</span>
+                    <span>Ends: {sprint.endDate.toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Row - Task Distribution & Standup Stats */}
+      <div className="grid grid-cols-3 gap-6">
+        {/* Task Distribution */}
+        <div className="card">
+          <div className="card-h">
+            <span className="card-title">
+              <PieChart className="w-4 h-4 text-[var(--text-3)]" />
+              Task Distribution
+            </span>
+          </div>
+          <div className="card-body">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Product Backlog</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-20 bg-slate-200 rounded-full h-2">
+                    <div className="bg-gray-500 h-2 rounded-full" style={{ width: `${(statusCounts.productBacklog / mockUserStories.length) * 100}%` }}></div>
+                  </div>
+                  <span className="text-sm font-medium w-8">{statusCounts.productBacklog}</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Refined Backlog</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-20 bg-slate-200 rounded-full h-2">
+                    <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${(statusCounts.refined / mockUserStories.length) * 100}%` }}></div>
+                  </div>
+                  <span className="text-sm font-medium w-8">{statusCounts.refined}</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">In Progress</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-20 bg-slate-200 rounded-full h-2">
+                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${(statusCounts.inProgress / mockUserStories.length) * 100}%` }}></div>
+                  </div>
+                  <span className="text-sm font-medium w-8">{statusCounts.inProgress}</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Testing</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-20 bg-slate-200 rounded-full h-2">
+                    <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${(statusCounts.testing / mockUserStories.length) * 100}%` }}></div>
+                  </div>
+                  <span className="text-sm font-medium w-8">{statusCounts.testing}</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Completed</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-20 bg-slate-200 rounded-full h-2">
+                    <div className="bg-green-500 h-2 rounded-full" style={{ width: `${(statusCounts.completed / mockUserStories.length) * 100}%` }}></div>
+                  </div>
+                  <span className="text-sm font-medium w-8">{statusCounts.completed}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Standup Stats */}
+        <div className="card col-span-2">
           <div className="card-h">
             <span className="card-title">
               <CheckCircle2 className="w-4 h-4 text-[var(--text-3)]" />
-              Today's submissions
+              Today's Standup Summary
             </span>
             <span className="badge b-neutral">{today}</span>
           </div>
-          <div className="card-body-0 overflow-x-auto">
-            <table className="tbl min-w-full">
-              <thead>
-                <tr>
-                  <th>Member</th>
-                  <th>Time</th>
-                  <th>Mood</th>
-                  <th>Blockers</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(u => {
-                  const uResp = responses.find(r => r.userId === u.id);
-                  return (
-                    <tr key={u.id}>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <div className={`avatar ${u.avatarColor}`}>{u.initials}</div>
-                          <div>
-                            <div className="text-[13px] font-medium text-[var(--text-1)]">{u.name}</div>
-                            <div className="text-[11px] text-[var(--text-3)]">{u.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        {uResp ? (
-                          <span className="text-[var(--green)] font-mono text-[11px]">{uResp.time}</span>
-                        ) : (
-                          <span className="text-[var(--text-3)] font-mono text-[11px]">—</span>
-                        )}
-                      </td>
-                      <td>
-                        {uResp ? (
-                          <span className="text-[16px] leading-none">{uResp.mood.emoji} <span className="text-[11px] text-[var(--text-3)] font-mono">{uResp.mood.score}</span></span>
-                        ) : (
-                          <span className="text-[var(--text-3)]">—</span>
-                        )}
-                      </td>
-                      <td>
-                        {uResp ? (
-                          <span className={`badge ${uResp.blockers.toLowerCase() === 'no' ? 'b-green' : 'b-red'}`}>
-                            {uResp.blockers.toLowerCase() === 'no' ? 'clear' : 'blocker'}
-                          </span>
-                        ) : (
-                          <span className="badge b-amber">pending</span>
-                        )}
-                      </td>
-                      <td>
-                        {uResp ? (
-                          <button className="btn btn-sm btn-ghost">View</button>
-                        ) : isAdmin ? (
-                          <button className="btn btn-sm btn-warn" onClick={() => sendReminders([u.id])}>Remind</button>
-                        ) : (
-                          <span className="text-[var(--text-3)] font-mono text-[11px]">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Right column */}
-        <div className="col-stack h-fit">
-          <div className="card border-rose-200 bg-rose-50 overflow-hidden">
-            <div className="p-6 pb-4 flex justify-between items-start">
-              <span className="text-sm font-bold text-rose-700 uppercase tracking-wider flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" />
-                Active blockers
-              </span>
-              <span className="px-2 py-1 bg-rose-200 text-rose-800 text-xs font-bold rounded">{activeBlockers.length} ALERTS</span>
+          <div className="card-body">
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{responses.length}</div>
+                <div className="text-xs text-slate-600">Submitted</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-amber-600">{pendingUsers.length}</div>
+                <div className="text-xs text-slate-600">Pending</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">{activeBlockers.length}</div>
+                <div className="text-xs text-slate-600">Blockers</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{avgMood}</div>
+                <div className="text-xs text-slate-600">Avg Mood</div>
+              </div>
             </div>
-            <div className="px-6 pb-6 bg-rose-50">
-              {activeBlockers.length === 0 ? (
-                <div className="text-[13px] text-slate-500 font-medium py-2">No active blockers.</div>
-              ) : (
-                activeBlockers.map(b => {
-                  const bgUser = users.find(u => u.id === b.userId);
-                  return (
-                    <div key={b.id} className="p-4 bg-white border border-rose-100 rounded-lg shadow-sm mb-3 last:mb-0">
-                      <div className="text-sm font-bold text-slate-800 mb-1">{bgUser?.name || 'Unknown'}</div>
-                      <div className="text-sm text-slate-600 leading-relaxed italic">{b.blockers}</div>
-                      <div className="text-xs text-slate-400 mt-2 flex gap-2 font-medium">
-                        <span>Today • {b.time}</span>
-                        <span className="text-emerald-600">✓ Notified</span>
+            {activeBlockers.length > 0 && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="text-sm font-medium text-red-800 mb-2">Active Blockers:</div>
+                <div className="space-y-1">
+                  {activeBlockers.slice(0, 2).map((blocker) => {
+                    const user = users.find(u => u.id === blocker.userId);
+                    return (
+                      <div key={blocker.id} className="text-xs text-red-700">
+                        • {user?.name}: {blocker.blockers}
                       </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {/* AI Summary Fake Visual */}
-      <div className="mt-4 bg-gradient-to-br from-[rgba(79,142,255,0.06)] to-[rgba(45,212,191,0.04)] border border-[rgba(79,142,255,0.15)] rounded-[var(--radius-lg)] p-5 relative overflow-hidden">
-        <div className="text-[10px] font-medium tracking-widest uppercase text-[var(--accent)] flex items-center gap-1.5 mb-3.5">
-          <SparklesIcon className="w-3.5 h-3.5" />
-          AI standup summary — generated 10:00 AM
-        </div>
-        <div className="grid grid-cols-3 gap-5">
-          <div>
-            <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--green)] mb-1.5">✦ Wins</div>
-            <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>Efua shipped the full auth flow ahead of schedule</div>
-            <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>Ama connected dashboard analytics</div>
-          </div>
-          <div>
-            <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--red)] mb-1.5">⚠ Risks</div>
-            <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>{activeBlockers.length} blockers may delay API integration</div>
-            <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>{pendingUsers.length} members yet to submit</div>
-          </div>
-          <div>
-            <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--accent)] mb-1.5">→ Priorities</div>
-            <div className="text-[12px] text-[var(--text-2)] py-1 flex gap-2 leading-relaxed"><span className="text-[var(--text-3)] flex-shrink-0 mt-px">·</span>Resolve infra API credentials urgently today</div>
-          </div>
-        </div>
-      </div>
-
     </div>
   );
 };
-
-const SparklesIcon = (props: any) => (
-  <svg viewBox="0 0 16 16" fill="currentColor" {...props}><path d="M8 1l1.5 4.5H14l-3.5 2.5 1.5 4.5L8 10l-4 2.5 1.5-4.5L2 5.5h4.5L8 1z" /></svg>
-);
