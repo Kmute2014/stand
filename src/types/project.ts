@@ -93,24 +93,6 @@ export interface Comment {
   updatedAt: Date;
 }
 
-export interface UserStory {
-  id: string;
-  title: string;
-  description: string;
-  priority: Priority;
-  status: Status;
-  assignees: User[];
-  dueDate?: Date;
-  subtasks: Subtask[];
-  columnId: string;
-  epicId: string;
-  sprintId: string;
-  projectId: string;
-  programId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface KanbanColumn {
   id: string;
   name: string;
@@ -119,7 +101,6 @@ export interface KanbanColumn {
   sprintId: string;
   projectId: string;
   programId: string;
-  userStories: UserStory[];
   createdAt: Date;
   updatedAt: Date;
 }
