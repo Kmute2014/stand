@@ -74,6 +74,17 @@ export const hasPermission = (user: User | undefined, permission: Permission): b
   }
 };
 
+export interface UserStory {
+  id: string;
+  title: string;
+  status: Status;
+  priority: Priority;
+  assignees: User[];
+  subtasks: Subtask[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Subtask {
   id: string;
   title: string;
@@ -109,11 +120,30 @@ export interface Epic {
   id: string;
   name: string;
   description?: string;
+  priority: Priority;
   order: number;
   columns: KanbanColumn[];
-  sprintId: string;
+  sprintId?: string; // Can span multiple sprints, so optional
   projectId: string;
   programId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserStory {
+  id: string;
+  title: string; // Enforced format: "As a [user], I want [action], so that [value]"
+  user: string; // Extracted from title - the "user" part
+  action: string; // Extracted from title - the "action" part  
+  value: string; // Extracted from title - the "value" part
+  description?: string; // Additional details if needed
+  priority: Priority;
+  estimate: number; // Story points or hours
+  status: Status; // Default "Backlog"
+  epicId: string; // Must belong to an epic
+  projectId: string; // Inherited from epic
+  programId: string; // Inherited from epic
+  order: number; // For ordering within epic
   createdAt: Date;
   updatedAt: Date;
 }
@@ -139,6 +169,8 @@ export interface Project {
   startDate: Date;
   endDate: Date;
   status: Status;
+  owner: User;
+  teamMembers: User[];
   sprints: Sprint[];
   programId: string;
   createdAt: Date;
@@ -149,6 +181,7 @@ export interface Program {
   id: string;
   name: string;
   description?: string;
+  owner: User;
   projects: Project[];
   createdAt: Date;
   updatedAt: Date;

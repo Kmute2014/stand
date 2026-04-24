@@ -12,11 +12,17 @@ import { TeamMood } from './pages/TeamMood';
 import { UsersPage } from './pages/Users';
 import { SchedulePage } from './pages/Schedule';
 import { MyHistory } from './pages/MyHistory';
+import { ProjectsPage } from './pages/ProjectsPage';
 import { Settings } from './components/Settings';
 import { AuthPage } from './pages/AuthPage';
 import { AddUserModal } from './components/AddUserModal';
 import { EditUserModal } from './components/EditUserModal';
 import { EditResponseModal } from './components/EditResponseModal';
+import { CreateProgramModal } from './components/CreateProgramModal';
+import { CreateProjectModal } from './components/CreateProjectModal';
+import { CreateEpicModal } from './components/CreateEpicModal';
+import { CreateUserStoryModal } from './components/CreateUserStoryModal';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { MissedStandupReminder } from './components/MissedStandupReminder';
 import { Toast } from './components/Toast';
 
@@ -39,6 +45,7 @@ export default function App() {
         <Topbar />
         <div className="content">
           {currentPage === 'dashboard' && <Dashboard />}
+          {currentPage === 'projects' && <ProjectsPage />}
           {currentPage === 'responses' && <Responses />}
           {currentPage === 'mood' && <TeamMood />}
           {currentPage === 'users' && <UsersPage />}
@@ -50,6 +57,16 @@ export default function App() {
       <AddUserModal />
       <EditUserModal />
       <EditResponseModal />
+      <CreateProgramModal />
+      <ErrorBoundary>
+        <CreateProjectModal />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <CreateEpicModal />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <CreateUserStoryModal />
+      </ErrorBoundary>
       <MissedStandupReminder />
       <Toast />
     </div>

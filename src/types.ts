@@ -48,3 +48,43 @@ export type NotificationLog = {
   type: 'Auto' | 'Alert' | 'Manual';
   text: string;
 };
+
+export type Project = {
+  id: string;
+  name: string;
+  description?: string;
+  startDate: string;
+  endDate: string;
+  status: 'Product Backlog' | 'Refined Backlog' | 'In Progress' | 'Testing' | 'Completed';
+  owner: {
+    id: string;
+    name: string;
+    email: string;
+    role: Role;
+  };
+  teamMembers: {
+    id: string;
+    name: string;
+    email: string;
+    role: Role;
+  }[];
+  sprints: any[]; // Will be populated with Sprint data later
+  programId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Program = {
+  id: string;
+  name: string;
+  description?: string;
+  owner: {
+    id: string;
+    name: string;
+    email: string;
+    role: Role;
+  };
+  projects: Project[]; // Will be populated with Project data later
+  createdAt: string;
+  updatedAt: string;
+};

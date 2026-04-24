@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, StandupResponse, Schedule, NotificationLog, CompanySettings } from './types';
+import { User, StandupResponse, Schedule, NotificationLog, CompanySettings, Program, Project } from './types';
+import { Epic, UserStory } from './types/project';
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -9,6 +10,10 @@ interface AppState {
   currentUser: User | null;
   users: User[];
   responses: StandupResponse[];
+  programs: Program[];
+  projects: Project[];
+  epics: Epic[];
+  userStories: UserStory[];
   schedule: Schedule;
   companySettings: CompanySettings;
   notifications: NotificationLog[];
@@ -23,6 +28,15 @@ interface AppState {
   updateCompanySettings: (settings: CompanySettings) => void;
   deleteResponse: (id: string) => void;
   sendReminders: (userIds?: string[]) => void;
+  createProgram: (program: Omit<Program, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateProgram: (id: string, updates: Partial<Program>) => void;
+  deleteProgram: (id: string) => void;
+  createProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateProject: (id: string, updates: Partial<Project>) => void;
+  deleteProject: (id: string) => void;
+  createEpic: (epic: Omit<Epic, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateEpic: (id: string, updates: Partial<Epic>) => void;
+  deleteEpic: (id: string) => void;
   editingUser: User | null;
   setEditingUser: (user: User | null) => void;
   editingResponse: StandupResponse | null;
@@ -35,6 +49,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [users, setUsers] = useState<User[]>([]);
   const [responses, setResponses] = useState<StandupResponse[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [epics, setEpics] = useState<Epic[]>([]);
+  const [userStories, setUserStories] = useState<UserStory[]>([]);
   const [notifications, setNotifications] = useState<NotificationLog[]>([]);
   const [schedule, setSchedule] = useState<Schedule>({
     activeDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
@@ -52,11 +70,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [editingResponse, setEditingResponse] = useState<StandupResponse | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // 1. Real-time Listeners (Responses & Users)
+  // 1. Real-time Listeners (Responses, Users, Programs, Projects, Epics & User Stories)
   useEffect(() => {
     if (!currentUser) return;
     let unsubResponses: (() => void) | undefined;
     let unsubUsers: (() => void) | undefined;
+    let unsubPrograms: (() => void) | undefined;
+    let unsubProjects: (() => void) | undefined;
+    let unsubEpics: (() => void) | undefined;
+    let unsubUserStories: (() => void) | undefined;
 
     const setupListeners = async () => {
       const { collection, onSnapshot, orderBy, query } = await import('firebase/firestore');
@@ -70,10 +92,95 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
         setUsers(data);
       });
+
+      unsubPrograms = onSnapshot(collection(db, 'programs'), (snapshot) => {
+        const data = snapshot.docs.map(doc => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            name: docData.name || '',
+            description: docData.description || '',
+            owner: docData.owner || { id: '', name: 'Unknown', email: '', role: 'User' },
+            projects: docData.projects || [],
+            createdAt: docData.createdAt?.toDate?.() || new Date(),
+            updatedAt: docData.updatedAt?.toDate?.() || new Date(),
+          } as Program;
+        });
+        console.log('Programs data loaded:', data);
+        setPrograms(data);
+      });
+
+      unsubProjects = onSnapshot(collection(db, 'projects'), (snapshot) => {
+        const data = snapshot.docs.map(doc => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            name: docData.name || '',
+            description: docData.description || '',
+            startDate: docData.startDate?.toDate?.() || new Date(),
+            endDate: docData.endDate?.toDate?.() || new Date(),
+            status: docData.status || 'Product Backlog',
+            owner: docData.owner || { id: '', name: 'Unknown', email: '', role: 'User' },
+            teamMembers: docData.teamMembers || [],
+            sprints: docData.sprints || [],
+            programId: docData.programId || '',
+            createdAt: docData.createdAt?.toDate?.() || new Date(),
+            updatedAt: docData.updatedAt?.toDate?.() || new Date(),
+          } as Project;
+        });
+        console.log('Projects data loaded:', data);
+        setProjects(data);
+      });
+
+      unsubEpics = onSnapshot(collection(db, 'epics'), (snapshot) => {
+        const data = snapshot.docs.map(doc => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            name: docData.name || '',
+            description: docData.description || '',
+            priority: docData.priority || 'Medium',
+            order: docData.order || 1,
+            columns: docData.columns || [],
+            sprintId: docData.sprintId,
+            projectId: docData.projectId || '',
+            programId: docData.programId || '',
+            createdAt: docData.createdAt?.toDate?.() || new Date(),
+            updatedAt: docData.updatedAt?.toDate?.() || new Date(),
+          } as Epic;
+        });
+        console.log('Epics data loaded:', data);
+        setEpics(data);
+      });
+
+      unsubUserStories = onSnapshot(collection(db, 'userStories'), (snapshot) => {
+        const data = snapshot.docs.map(doc => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            title: docData.title || '',
+            user: docData.user || '',
+            action: docData.action || '',
+            value: docData.value || '',
+            description: docData.description,
+            priority: docData.priority || 'Medium',
+            estimate: docData.estimate || 1,
+            status: docData.status || 'Backlog',
+            epicId: docData.epicId || '',
+            projectId: docData.projectId || '',
+            programId: docData.programId || '',
+            order: docData.order || 1,
+            createdAt: docData.createdAt?.toDate?.() || new Date(),
+            updatedAt: docData.updatedAt?.toDate?.() || new Date(),
+          } as UserStory;
+        });
+        console.log('User Stories data loaded:', data);
+        setUserStories(data);
+      });
     };
 
     setupListeners();
-    return () => { unsubResponses?.(); unsubUsers?.(); };
+    return () => { unsubResponses?.(); unsubUsers?.(); unsubPrograms?.(); unsubProjects?.(); unsubEpics?.(); unsubUserStories?.(); };
   }, [currentUser?.id]);
 
   // 2. Fetch Global Settings (Schedule & Company) on Load
@@ -246,16 +353,194 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const createProgram = async (programData: Omit<Program, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+      const docRef = await addDoc(collection(db, 'programs'), {
+        ...programData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      showToast('Program created successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to create program.', 'red');
+    }
+  };
+
+  const updateProgram = async (id: string, updates: Partial<Program>) => {
+    try {
+      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+      await updateDoc(doc(db, 'programs', id), {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+      showToast('Program updated successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to update program.', 'red');
+    }
+  };
+
+  const deleteProgram = async (id: string) => {
+    // Check if current user has permission
+    if (!currentUser || (currentUser.role !== 'Admin' && currentUser.role !== 'Project Manager/Scrum Master')) {
+      showToast('Only admins and project managers can delete programs.', 'red');
+      return;
+    }
+
+    try {
+      const { doc, deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, 'programs', id));
+      showToast('Program deleted successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to delete program.', 'red');
+    }
+  };
+
+  // Project Management Functions
+  const createProject = async (projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+      const docRef = await addDoc(collection(db, 'projects'), {
+        ...projectData,
+        startDate: new Date(projectData.startDate),
+        endDate: new Date(projectData.endDate),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      showToast('Project created successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to create project.', 'red');
+    }
+  };
+
+  const updateProject = async (id: string, updates: Partial<Project>) => {
+    try {
+      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+      await updateDoc(doc(db, 'projects', id), {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+      showToast('Project updated successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to update project.', 'red');
+    }
+  };
+
+  const deleteProject = async (id: string) => {
+    // Check if current user has permission
+    if (!currentUser || (currentUser.role !== 'Admin' && currentUser.role !== 'Project Manager/Scrum Master')) {
+      showToast('Only admins and project managers can delete projects.', 'red');
+      return;
+    }
+
+    try {
+      const { doc, deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, 'projects', id));
+      showToast('Project deleted successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to delete project.', 'red');
+    }
+  };
+
+  // Epic Management Functions
+  const createEpic = async (epicData: Omit<Epic, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+      const docRef = await addDoc(collection(db, 'epics'), {
+        ...epicData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      showToast('Epic created successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to create epic.', 'red');
+    }
+  };
+
+  const updateEpic = async (id: string, updates: Partial<Epic>) => {
+    try {
+      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+      await updateDoc(doc(db, 'epics', id), {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+      showToast('Epic updated successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to update epic.', 'red');
+    }
+  };
+
+  const deleteEpic = async (id: string) => {
+    // Check if current user has permission
+    if (!currentUser || (currentUser.role !== 'Admin' && currentUser.role !== 'Project Manager/Scrum Master')) {
+      showToast('Only admins and project managers can delete epics.', 'red');
+      return;
+    }
+
+    try {
+      const { doc, deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, 'epics', id));
+      showToast('Epic deleted successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to delete epic.', 'red');
+    }
+  };
+
+  // User Story Management Functions
+  const createUserStory = async (userStoryData: Omit<UserStory, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+      const docRef = await addDoc(collection(db, 'userStories'), {
+        ...userStoryData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      showToast('User Story created successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to create user story.', 'red');
+    }
+  };
+
+  const updateUserStory = async (id: string, updates: Partial<UserStory>) => {
+    try {
+      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+      await updateDoc(doc(db, 'userStories', id), {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+      showToast('User Story updated successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to update user story.', 'red');
+    }
+  };
+
+  const deleteUserStory = async (id: string) => {
+    // Check if current user has permission
+    if (!currentUser || (currentUser.role !== 'Admin' && currentUser.role !== 'Project Manager/Scrum Master')) {
+      showToast('Only admins and project managers can delete user stories.', 'red');
+      return;
+    }
+
+    try {
+      const { doc, deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, 'userStories', id));
+      showToast('User Story deleted successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to delete user story.', 'red');
+    }
+  };
+
   return (
     <AppContext.Provider value={{
-      currentPage, setCurrentPage, currentUser, users, responses, schedule, companySettings, notifications,
+      currentPage, setCurrentPage, currentUser, users, programs, projects, epics, userStories, responses, schedule, companySettings, notifications,
       showToast, toastConfig, addUser: () => { }, updateUser, deleteUser, submitStandup, updateResponse: () => { },
-      updateSchedule, updateCompanySettings, deleteResponse, sendReminders,
+      updateSchedule, updateCompanySettings, deleteResponse, sendReminders, createProgram, updateProgram, deleteProgram, createProject, updateProject, deleteProject, createEpic, updateEpic, deleteEpic, createUserStory, updateUserStory, deleteUserStory,
       editingUser, setEditingUser, editingResponse, setEditingResponse
     }}>
       {children}
     </AppContext.Provider>
   );
+
 };
 
 export const useAppContext = () => {

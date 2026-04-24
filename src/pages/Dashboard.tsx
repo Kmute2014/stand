@@ -8,8 +8,9 @@ import {
 import { UserStory, Status, Priority, Epic, Sprint } from '../types/project';
 
 export const Dashboard: React.FC = () => {
-  const { currentUser, responses, users, sendReminders } = useAppContext();
+  const { currentUser, responses, users, programs, sendReminders } = useAppContext();
   const isAdmin = currentUser?.role === 'Admin';
+  const canCreateProgram = currentUser?.role === 'Admin' || currentUser?.role === 'Project Manager/Scrum Master';
 
   // Mock project data - in real app this would come from props or context
   const [mockUserStories] = useState<UserStory[]>([
@@ -28,6 +29,23 @@ export const Dashboard: React.FC = () => {
   const [mockSprints] = useState<Sprint[]>([
     { id: '1', name: 'Sprint 1', startDate: new Date(), endDate: new Date(), epics: [], createdAt: new Date(), updatedAt: new Date() },
   ]);
+
+  // Calculate program-level metrics
+  const getTotalProjects = () => {
+    return programs.reduce((total, program) => total + (program.projects?.length || 0), 0);
+  };
+
+  const getActiveSprints = () => {
+    // This would be calculated from actual sprint data when projects are implemented
+    // For now, return a mock value based on programs
+    return programs.length > 0 ? programs.length * 2 : 0;
+  };
+
+  const getOverallCompletion = () => {
+    // This would be calculated from actual project completion data
+    // For now, return a mock completion rate
+    return programs.length > 0 ? 65 : 0;
+  };
 
   const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   const pendingUsers = users.filter(u => u.status === 'Active' && !u.lastStandup?.includes('Today'));
@@ -86,9 +104,27 @@ export const Dashboard: React.FC = () => {
         <div className="ph-row">
           <div>
             <div className="ph-title">Good morning, {currentUser?.name.split(' ')[0] || 'User'}.</div>
-            <div className="ph-sub">// Project Overview · {mockUserStories.length} total tasks · {completionRate}% completion rate</div>
+            <div className="ph-sub">// Program Overview · {programs.length} programs · {getTotalProjects()} total projects · {getOverallCompletion()}% completion rate</div>
           </div>
           <div className="flex gap-2">
+            {canCreateProgram && (
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => document.getElementById('modal-create-program')?.classList.add('show')}
+              >
+                <Target className="w-4 h-4" />
+                Create Program
+              </button>
+            )}
+            {canCreateProgram && programs.length > 0 && (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => document.getElementById('modal-create-project')?.classList.add('show')}
+              >
+                <Activity className="w-4 h-4" />
+                Create Project
+              </button>
+            )}
             <button className="btn btn-ghost btn-sm">
               <Calendar className="w-4 h-4" />
               Today
@@ -105,38 +141,38 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Top Stats Row */}
+      {/* Top Stats Row - Program Level Metrics */}
       <div className="grid grid-cols-4 gap-6 mb-6">
         <div className="card relative overflow-hidden p-6 border-b-[3px] border-b-blue-600">
           <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-4">
-            <CheckCircle2 className="w-[20px] h-[20px] text-blue-600" />
+            <Target className="w-[20px] h-[20px] text-blue-600" />
           </div>
-          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{statusCounts.completed}</div>
-          <div className="text-sm text-slate-600 font-medium">Completed Tasks</div>
-          <div className="text-xs text-slate-400 mt-1">of {mockUserStories.length} total tasks</div>
+          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{programs.length}</div>
+          <div className="text-sm text-slate-600 font-medium">Total Programs</div>
+          <div className="text-xs text-slate-400 mt-1">strategic initiatives</div>
         </div>
         <div className="card relative overflow-hidden p-6 border-b-[3px] border-b-amber-500">
           <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center mb-4">
             <Activity className="w-[20px] h-[20px] text-amber-500" />
           </div>
-          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{statusCounts.inProgress}</div>
-          <div className="text-sm text-slate-600 font-medium">In Progress</div>
-          <div className="text-xs text-slate-400 mt-1">actively being worked on</div>
+          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{getTotalProjects()}</div>
+          <div className="text-sm text-slate-600 font-medium">Total Projects</div>
+          <div className="text-xs text-slate-400 mt-1">across all programs</div>
         </div>
         <div className="card relative overflow-hidden p-6 border-b-[3px] border-b-purple-500">
           <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center mb-4">
-            <Target className="w-[20px] h-[20px] text-purple-500" />
+            <Clock className="w-[20px] h-[20px] text-purple-500" />
           </div>
-          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{statusCounts.refined}</div>
-          <div className="text-sm text-slate-600 font-medium">Refined Backlog</div>
-          <div className="text-xs text-slate-400 mt-1">ready for development</div>
+          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{getActiveSprints()}</div>
+          <div className="text-sm text-slate-600 font-medium">Active Sprints</div>
+          <div className="text-xs text-slate-400 mt-1">currently in progress</div>
         </div>
         <div className="card relative overflow-hidden p-6 border-b-[3px] border-b-green-500">
           <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center mb-4">
             <TrendingUp className="w-[20px] h-[20px] text-green-500" />
           </div>
-          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{completionRate}%</div>
-          <div className="text-sm text-slate-600 font-medium">Completion Rate</div>
+          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{getOverallCompletion()}%</div>
+          <div className="text-sm text-slate-600 font-medium">Overall Completion</div>
           <div className="text-xs text-green-600 font-medium mt-1">↑ 5% from last week</div>
         </div>
       </div>
