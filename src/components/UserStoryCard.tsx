@@ -1,19 +1,27 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { User, Calendar, Flag, MessageSquare, CheckSquare, MoreVertical, GripVertical } from 'lucide-react';
+import { User, Calendar, Flag, MessageSquare, CheckSquare, MoreVertical, GripVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 import { UserStory, Priority } from '../types/project';
 
 interface UserStoryCardProps {
   story: UserStory;
   onEdit: () => void;
   onDelete: () => void;
+  onMoveToPreviousColumn?: () => void;
+  onMoveToNextColumn?: () => void;
+  canMoveToPrevious?: boolean;
+  canMoveToNext?: boolean;
 }
 
 export const UserStoryCard: React.FC<UserStoryCardProps> = ({
   story,
   onEdit,
   onDelete,
+  onMoveToPreviousColumn,
+  onMoveToNextColumn,
+  canMoveToPrevious = false,
+  canMoveToNext = false,
 }) => {
   const {
     attributes,
@@ -24,13 +32,6 @@ export const UserStoryCard: React.FC<UserStoryCardProps> = ({
     isDragging,
   } = useSortable({ id: story.id });
 
-  console.log('UserStoryCard drag setup:', {
-    storyId: story.id,
-    storyTitle: story.title,
-    hasAttributes: !!attributes,
-    hasListeners: !!listeners,
-    hasSetNodeRef: !!setNodeRef
-  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -60,18 +61,15 @@ export const UserStoryCard: React.FC<UserStoryCardProps> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 cursor-pointer hover:shadow-md transition-shadow"
+      className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 hover:shadow-md transition-shadow"
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-start gap-2 flex-1">
           <div
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded mt-1"
-            onMouseDown={() => console.log('Grip handle pressed for story:', story.title)}
-            onMouseUp={() => console.log('Grip handle released for story:', story.title)}
-            onClick={() => console.log('Grip handle clicked for story:', story.title)}
-            onDragStart={() => console.log('Grip handle drag start for story:', story.title)}
+            className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded mt-1 touch-none"
+            style={{ touchAction: 'none' }}
           >
             <GripVertical className="w-4 h-4 text-gray-400" />
           </div>
@@ -171,19 +169,60 @@ export const UserStoryCard: React.FC<UserStoryCardProps> = ({
         )}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
-        <button
-          onClick={onEdit}
-          className="flex-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
-        >
-          Edit
-        </button>
-        <button
-          onClick={onDelete}
-          className="flex-1 px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
-        >
-          Delete
-        </button>
+      <div className="mt-3 pt-3 border-t border-gray-100">
+        <div className="flex gap-2 mb-2">
+          <button
+            onClick={onEdit}
+            className="flex-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+          >
+            Edit
+          </button>
+          <button
+            onClick={onDelete}
+            className="flex-1 px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+
+        {(onMoveToPreviousColumn || onMoveToNextColumn) && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                console.log('Previous button clicked for story:', story.title, 'canMoveToPrevious:', canMoveToPrevious);
+                if (onMoveToPreviousColumn) {
+                  onMoveToPreviousColumn();
+                }
+              }}
+              disabled={!canMoveToPrevious}
+              className={`flex-1 px-3 py-1.5 text-sm rounded transition-colors flex items-center justify-center gap-1 ${canMoveToPrevious
+                ? 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
+              title="Move to previous column"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+            <button
+              onClick={() => {
+                console.log('Next button clicked for story:', story.title, 'canMoveToNext:', canMoveToNext);
+                if (onMoveToNextColumn) {
+                  onMoveToNextColumn();
+                }
+              }}
+              disabled={!canMoveToNext}
+              className={`flex-1 px-3 py-1.5 text-sm rounded transition-colors flex items-center justify-center gap-1 ${canMoveToNext
+                ? 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
+              title="Move to next column"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
