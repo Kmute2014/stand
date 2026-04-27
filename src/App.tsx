@@ -22,6 +22,8 @@ import { CreateProgramModal } from './components/CreateProgramModal';
 import { CreateProjectModal } from './components/CreateProjectModal';
 import { CreateEpicModal } from './components/CreateEpicModal';
 import { CreateUserStoryModal } from './components/CreateUserStoryModal';
+import { EditProgramModal } from './components/EditProgramModal';
+import { EditProjectModal } from './components/EditProjectModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MissedStandupReminder } from './components/MissedStandupReminder';
 import { Toast } from './components/Toast';
@@ -67,6 +69,8 @@ export default function App() {
       <ErrorBoundary>
         <CreateUserStoryModal />
       </ErrorBoundary>
+      <EditProgramModal />
+      <EditProjectModal />
       <MissedStandupReminder />
       <Toast />
     </div>

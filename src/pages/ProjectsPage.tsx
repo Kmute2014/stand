@@ -385,7 +385,10 @@ export const ProjectsPage: React.FC = () => {
 
                       {canManagePrograms && (
                         <div className="flex items-center gap-2 ml-4">
-                          <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                          <button
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                            onClick={() => (window as any).openEditProgramModal?.(program.id)}
+                          >
                             <Edit2 className="w-4 h-4 text-slate-600" />
                           </button>
                           <button
@@ -423,7 +426,10 @@ export const ProjectsPage: React.FC = () => {
                               </div>
                               {canManagePrograms && (
                                 <div className="flex items-center gap-2">
-                                  <button className="p-1 hover:bg-slate-200 rounded transition-colors">
+                                  <button
+                                    className="p-1 hover:bg-slate-200 rounded transition-colors"
+                                    onClick={() => (window as any).openEditProjectModal?.(project.id)}
+                                  >
                                     <Edit2 className="w-3 h-3 text-slate-600" />
                                   </button>
                                   <button
@@ -550,7 +556,10 @@ export const ProjectsPage: React.FC = () => {
 
                         {canManagePrograms && (
                           <div className="flex items-center gap-2 ml-4">
-                            <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                            <button
+                              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                              onClick={() => (window as any).openEditProjectModal?.(project.id)}
+                            >
                               <Edit2 className="w-4 h-4 text-slate-600" />
                             </button>
                             <button
