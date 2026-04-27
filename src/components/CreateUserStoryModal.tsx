@@ -13,12 +13,12 @@ interface ParsedUserStory {
 }
 
 export const CreateUserStoryModal: React.FC = () => {
-  const { showToast, currentUser, epics, projects, programs } = useAppContext();
+  const { showToast, currentUser, projects, programs } = useAppContext();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('Medium');
   const [estimate, setEstimate] = useState<number>(1);
-  const [selectedEpicId, setSelectedEpicId] = useState('');
+  const [selectedProjectId, setSelectedProjectId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [parsedStory, setParsedStory] = useState<ParsedUserStory>({
     user: '',
@@ -33,7 +33,7 @@ export const CreateUserStoryModal: React.FC = () => {
   // Parse and validate user story format
   const parseUserStory = (storyTitle: string): ParsedUserStory => {
     const trimmedTitle = storyTitle.trim();
-    
+
     if (!trimmedTitle) {
       return { user: '', action: '', value: '', isValid: false, error: 'User story title is required' };
     }
@@ -53,7 +53,7 @@ export const CreateUserStoryModal: React.FC = () => {
     }
 
     const [, user, action, value] = match;
-    
+
     return {
       user: user.trim(),
       action: action.trim(),
@@ -79,8 +79,8 @@ export const CreateUserStoryModal: React.FC = () => {
       return;
     }
 
-    if (!selectedEpicId) {
-      showToast('Please select an epic.', 'red');
+    if (!selectedProjectId) {
+      showToast('Please select a project.', 'red');
       return;
     }
 
@@ -91,12 +91,11 @@ export const CreateUserStoryModal: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const selectedEpic = epics.find(e => e.id === selectedEpicId);
-      const selectedProject = projects.find(p => p.id === selectedEpic?.projectId);
+      const selectedProject = projects.find(p => p.id === selectedProjectId);
       const selectedProgram = programs.find(p => p.id === selectedProject?.programId);
 
-      if (!selectedEpic || !selectedProject || !selectedProgram) {
-        showToast('Invalid epic selection.', 'red');
+      if (!selectedProject || !selectedProgram) {
+        showToast('Invalid project selection.', 'red');
         return;
       }
 
@@ -111,7 +110,6 @@ export const CreateUserStoryModal: React.FC = () => {
         priority,
         estimate,
         status: 'Backlog', // Default status
-        epicId: selectedEpicId,
         projectId: selectedProject.id,
         programId: selectedProgram.id,
         order: 1, // Will be updated later when multiple stories exist
@@ -128,7 +126,7 @@ export const CreateUserStoryModal: React.FC = () => {
       setDescription('');
       setPriority('Medium');
       setEstimate(1);
-      setSelectedEpicId('');
+      setSelectedProjectId('');
       setParsedStory({ user: '', action: '', value: '', isValid: false });
       document.getElementById('modal-create-user-story')?.classList.remove('show');
     } catch (error: any) {
@@ -265,29 +263,28 @@ export const CreateUserStoryModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Epic Selection */}
+          {/* Project Selection */}
           <div className="form-group">
-            <label className="form-label">Epic *</label>
+            <label className="form-label">Project *</label>
             <select
               className="form-input form-select"
-              value={selectedEpicId}
-              onChange={e => setSelectedEpicId(e.target.value)}
+              value={selectedProjectId}
+              onChange={e => setSelectedProjectId(e.target.value)}
               disabled={!canCreateUserStory || isLoading}
             >
-              <option value="">Select an epic...</option>
-              {epics.map(epic => {
-                const project = projects.find(p => p.id === epic.projectId);
-                const program = programs.find(p => p.id === project?.programId);
+              <option value="">Select a project...</option>
+              {projects.map(project => {
+                const program = programs.find(p => p.id === project.programId);
                 return (
-                  <option key={epic.id} value={epic.id}>
-                    {epic.name} ({project?.name || 'Unknown Project'} / {program?.name || 'Unknown Program'})
+                  <option key={project.id} value={project.id}>
+                    {project.name} ({program?.name || 'Unknown Program'})
                   </option>
                 );
               })}
             </select>
-            {epics.length === 0 && (
+            {projects.length === 0 && (
               <div className="text-xs text-amber-600 mt-1">
-                No epics available. Please create an epic first.
+                No projects available. Please create a project first.
               </div>
             )}
           </div>
@@ -305,7 +302,7 @@ export const CreateUserStoryModal: React.FC = () => {
           <button
             className="btn btn-primary"
             onClick={handleCreate}
-            disabled={isLoading || !canCreateUserStory || !parsedStory.isValid || !selectedEpicId || estimate <= 0}
+            disabled={isLoading || !canCreateUserStory || !parsedStory.isValid || !selectedProjectId || estimate <= 0}
           >
             {isLoading ? 'Creating...' : 'Create User Story'}
           </button>

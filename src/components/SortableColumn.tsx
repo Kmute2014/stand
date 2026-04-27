@@ -4,9 +4,8 @@ import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { Plus, MoreVertical } from 'lucide-react';
 import { KanbanColumn, UserStory } from '../types/project';
-import { UserStoryCard } from './UserStoryCard';
 
-const STATUS_COLUMN_COUNT = 3; // must match EpicKanbanBoard
+const STATUS_COLUMN_COUNT = 3; // number of status columns
 
 interface SortableColumnProps {
   column: KanbanColumn;
@@ -144,24 +143,14 @@ export const SortableColumn: React.FC<SortableColumnProps> = ({
           >
             <div className="space-y-3">
               {column.userStories.map((story) => (
-                <UserStoryCard
+                <div
                   key={story.id}
-                  story={story}
-                  onEdit={() => onEditStory(story)}
-                  onDelete={() => onDeleteStory(story.id)}
-                  onMoveToPreviousColumn={
-                    canMoveToPrevious
-                      ? () => onMoveStoryToPreviousColumn?.(story.id)
-                      : undefined
-                  }
-                  onMoveToNextColumn={
-                    canMoveToNext
-                      ? () => onMoveStoryToNextColumn?.(story.id)
-                      : undefined
-                  }
-                  canMoveToPrevious={canMoveToPrevious}
-                  canMoveToNext={canMoveToNext}
-                />
+                  className="bg-white p-3 rounded border border-gray-200 cursor-pointer hover:shadow-sm transition-shadow"
+                  onClick={() => onEditStory(story)}
+                >
+                  <div className="font-medium text-sm text-gray-900">{story.title}</div>
+                  <div className="text-xs text-gray-500 mt-1">{story.priority}</div>
+                </div>
               ))}
             </div>
 

@@ -32,7 +32,6 @@ export const ProgramDetailView: React.FC<ProgramDetailViewProps> = ({
         endDate: new Date(newProjectEndDate),
         status: newProjectStatus,
         programId: program.id,
-        sprints: [],
       });
       setNewProjectName('');
       setNewProjectDescription('');
@@ -49,7 +48,7 @@ export const ProgramDetailView: React.FC<ProgramDetailViewProps> = ({
         return 'bg-green-100 text-green-800';
       case 'In Progress':
         return 'bg-blue-100 text-blue-800';
-      case 'Not Started':
+      case 'Product Backlog':
         return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -61,7 +60,7 @@ export const ProgramDetailView: React.FC<ProgramDetailViewProps> = ({
     const completed = program.projects.filter(p => p.status === 'Completed').length;
     const inProgress = program.projects.filter(p => p.status === 'In Progress').length;
     const notStarted = program.projects.filter(p => p.status === 'Not Started').length;
-    
+
     return { total, completed, inProgress, notStarted };
   };
 
@@ -236,7 +235,7 @@ export const ProgramDetailView: React.FC<ProgramDetailViewProps> = ({
                   <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center">
                     <div className="w-2 h-2 rounded-full bg-gray-600"></div>
                   </div>
-                  <span>{project.sprints.length} Sprints</span>
+                  <span>Active</span>
                 </div>
                 <ChevronRight className="w-4 h-4 text-gray-400" />
               </div>

@@ -13,6 +13,7 @@ import { UsersPage } from './pages/Users';
 import { SchedulePage } from './pages/Schedule';
 import { MyHistory } from './pages/MyHistory';
 import { ProjectsPage } from './pages/ProjectsPage';
+import { SprintBoard } from './pages/SprintBoard';
 import { Settings } from './components/Settings';
 import { AuthPage } from './pages/AuthPage';
 import { AddUserModal } from './components/AddUserModal';
@@ -20,7 +21,6 @@ import { EditUserModal } from './components/EditUserModal';
 import { EditResponseModal } from './components/EditResponseModal';
 import { CreateProgramModal } from './components/CreateProgramModal';
 import { CreateProjectModal } from './components/CreateProjectModal';
-import { CreateEpicModal } from './components/CreateEpicModal';
 import { CreateUserStoryModal } from './components/CreateUserStoryModal';
 import { EditProgramModal } from './components/EditProgramModal';
 import { EditProjectModal } from './components/EditProjectModal';
@@ -48,6 +48,7 @@ export default function App() {
         <div className="content">
           {currentPage === 'dashboard' && <Dashboard />}
           {currentPage === 'projects' && <ProjectsPage />}
+          {currentPage === 'sprintboard' && <SprintBoard />}
           {currentPage === 'responses' && <Responses />}
           {currentPage === 'mood' && <TeamMood />}
           {currentPage === 'users' && <UsersPage />}
@@ -62,9 +63,6 @@ export default function App() {
       <CreateProgramModal />
       <ErrorBoundary>
         <CreateProjectModal />
-      </ErrorBoundary>
-      <ErrorBoundary>
-        <CreateEpicModal />
       </ErrorBoundary>
       <ErrorBoundary>
         <CreateUserStoryModal />

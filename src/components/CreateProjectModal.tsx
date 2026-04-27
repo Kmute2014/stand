@@ -86,7 +86,6 @@ export const CreateProjectModal: React.FC = () => {
           email: u.email,
           role: u.role,
         })),
-        sprints: [],
         programId: selectedProgramId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -110,7 +109,7 @@ export const CreateProjectModal: React.FC = () => {
       const defaultStatuses = [
         { name: 'Backlog', order: 1, color: '#6B7280' },
         { name: 'Ready', order: 2, color: '#3B82F6' },
-        { name: 'In Sprint', order: 3, color: '#F59E0B' },
+        { name: 'In Progress', order: 3, color: '#F59E0B' },
         { name: 'Done', order: 4, color: '#10B981' },
       ];
 

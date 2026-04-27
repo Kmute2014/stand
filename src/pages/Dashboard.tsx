@@ -5,7 +5,7 @@ import {
   Activity, Users, Target, Clock, BarChart3, PieChart, ArrowUp,
   ArrowDown, MoreHorizontal, Calendar, Filter, RefreshCw
 } from 'lucide-react';
-import { UserStory, Status, Priority, Epic, Sprint } from '../types/project';
+import { UserStory, Status, Priority } from '../types/project';
 
 export const Dashboard: React.FC = () => {
   const { currentUser, responses, users, programs, sendReminders } = useAppContext();
@@ -14,32 +14,20 @@ export const Dashboard: React.FC = () => {
 
   // Mock project data - in real app this would come from props or context
   const [mockUserStories] = useState<UserStory[]>([
-    { id: '1', title: 'User Authentication', status: 'Completed', priority: 'High', assignees: [], subtasks: [], createdAt: new Date(), updatedAt: new Date() },
-    { id: '2', title: 'Dashboard UI', status: 'In Progress', priority: 'Medium', assignees: [], subtasks: [], createdAt: new Date(), updatedAt: new Date() },
-    { id: '3', title: 'API Integration', status: 'Refined Backlog', priority: 'Critical', assignees: [], subtasks: [], createdAt: new Date(), updatedAt: new Date() },
-    { id: '4', title: 'Testing Framework', status: 'Testing', priority: 'Low', assignees: [], subtasks: [], createdAt: new Date(), updatedAt: new Date() },
-    { id: '5', title: 'Documentation', status: 'Product Backlog', priority: 'Medium', assignees: [], subtasks: [], createdAt: new Date(), updatedAt: new Date() },
+    { id: '1', title: 'As a user, I want to authenticate with email and password, so that I can securely access the application', user: 'user', action: 'authenticate with email and password', value: 'securely access the application', status: 'Completed', priority: 'High', estimate: 5, projectId: 'mock-project-1', programId: 'mock-program-1', order: 1, createdAt: new Date(), updatedAt: new Date() },
+    { id: '2', title: 'As a user, I want to view a dashboard, so that I can see my project overview', user: 'user', action: 'view a dashboard', value: 'see my project overview', status: 'In Progress', priority: 'Medium', estimate: 3, projectId: 'mock-project-1', programId: 'mock-program-1', order: 2, createdAt: new Date(), updatedAt: new Date() },
+    { id: '3', title: 'As a developer, I want to integrate APIs, so that the application can connect to external services', user: 'developer', action: 'integrate APIs', value: 'application can connect to external services', status: 'Refined Backlog', priority: 'Critical', estimate: 8, projectId: 'mock-project-2', programId: 'mock-program-1', order: 1, createdAt: new Date(), updatedAt: new Date() },
+    { id: '4', title: 'As a tester, I want to create test cases, so that I can ensure application quality', user: 'tester', action: 'create test cases', value: 'ensure application quality', status: 'Testing', priority: 'Low', estimate: 4, projectId: 'mock-project-2', programId: 'mock-program-1', order: 2, createdAt: new Date(), updatedAt: new Date() },
+    { id: '5', title: 'As a writer, I want to document features, so that users can understand how to use the application', user: 'writer', action: 'document features', value: 'users can understand how to use the application', status: 'Backlog', priority: 'Medium', estimate: 6, projectId: 'mock-project-3', programId: 'mock-program-2', order: 1, createdAt: new Date(), updatedAt: new Date() },
   ]);
 
-  const [mockEpics] = useState<Epic[]>([
-    { id: '1', name: 'Authentication System', description: 'User login and security', order: 1, columns: [], createdAt: new Date(), updatedAt: new Date() },
-    { id: '2', name: 'Dashboard Development', description: 'Main dashboard features', order: 2, columns: [], createdAt: new Date(), updatedAt: new Date() },
-  ]);
 
-  const [mockSprints] = useState<Sprint[]>([
-    { id: '1', name: 'Sprint 1', startDate: new Date(), endDate: new Date(), epics: [], createdAt: new Date(), updatedAt: new Date() },
-  ]);
 
   // Calculate program-level metrics
   const getTotalProjects = () => {
     return programs.reduce((total, program) => total + (program.projects?.length || 0), 0);
   };
 
-  const getActiveSprints = () => {
-    // This would be calculated from actual sprint data when projects are implemented
-    // For now, return a mock value based on programs
-    return programs.length > 0 ? programs.length * 2 : 0;
-  };
 
   const getOverallCompletion = () => {
     // This would be calculated from actual project completion data
@@ -163,9 +151,9 @@ export const Dashboard: React.FC = () => {
           <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center mb-4">
             <Clock className="w-[20px] h-[20px] text-purple-500" />
           </div>
-          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{getActiveSprints()}</div>
-          <div className="text-sm text-slate-600 font-medium">Active Sprints</div>
-          <div className="text-xs text-slate-400 mt-1">currently in progress</div>
+          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{programs.length}</div>
+          <div className="text-sm text-slate-600 font-medium">Total Programs</div>
+          <div className="text-xs text-slate-400 mt-1">across organization</div>
         </div>
         <div className="card relative overflow-hidden p-6 border-b-[3px] border-b-green-500">
           <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center mb-4">
@@ -252,65 +240,6 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Third Row - Epic & Sprint Progress */}
-      <div className="grid grid-cols-2 gap-6 mb-6">
-        {/* Epic Progress */}
-        <div className="card">
-          <div className="card-h">
-            <span className="card-title">
-              <Target className="w-4 h-4 text-[var(--text-3)]" />
-              Epic Progress
-            </span>
-            <button className="btn btn-sm btn-primary">View All</button>
-          </div>
-          <div className="card-body">
-            <div className="space-y-4">
-              {mockEpics.map((epic) => (
-                <div key={epic.id} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">{epic.name}</h4>
-                    <span className="text-sm text-slate-600">75%</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-2">{epic.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Sprint Progress */}
-        <div className="card">
-          <div className="card-h">
-            <span className="card-title">
-              <Clock className="w-4 h-4 text-[var(--text-3)]" />
-              Sprint Progress
-            </span>
-            <span className="badge b-green">Active</span>
-          </div>
-          <div className="card-body">
-            <div className="space-y-4">
-              {mockSprints.map((sprint) => (
-                <div key={sprint.id} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">{sprint.name}</h4>
-                    <span className="text-sm text-slate-600">60%</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
-                    <div className="bg-green-600 h-2 rounded-full" style={{ width: '60%' }}></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-slate-500 mt-2">
-                    <span>Started: {sprint.startDate.toLocaleDateString()}</span>
-                    <span>Ends: {sprint.endDate.toLocaleDateString()}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Bottom Row - Task Distribution & Standup Stats */}
       <div className="grid grid-cols-3 gap-6">

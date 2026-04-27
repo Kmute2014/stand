@@ -108,22 +108,6 @@ export interface KanbanColumn {
   id: string;
   name: string;
   order: number;
-  epicId: string;
-  sprintId: string;
-  projectId: string;
-  programId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Epic {
-  id: string;
-  name: string;
-  description?: string;
-  priority: Priority;
-  order: number;
-  columns: KanbanColumn[];
-  sprintId?: string; // Can span multiple sprints, so optional
   projectId: string;
   programId: string;
   createdAt: Date;
@@ -140,27 +124,13 @@ export interface UserStory {
   priority: Priority;
   estimate: number; // Story points or hours
   status: Status; // Default "Backlog"
-  epicId: string; // Must belong to an epic
-  projectId: string; // Inherited from epic
-  programId: string; // Inherited from epic
-  order: number; // For ordering within epic
+  projectId: string;
+  programId: string;
+  order: number; // For ordering within project
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface Sprint {
-  id: string;
-  name: string;
-  description: string;
-  startDate: Date;
-  endDate: Date;
-  status: Status;
-  epics: Epic[];
-  projectId: string;
-  programId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 export interface Project {
   id: string;
@@ -171,7 +141,6 @@ export interface Project {
   status: Status;
   owner: User;
   teamMembers: User[];
-  sprints: Sprint[];
   programId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -194,14 +163,8 @@ export interface GanttTask {
   endDate: Date;
   progress: number;
   status: Status;
-  type: 'program' | 'project' | 'sprint' | 'userStory';
+  type: 'program' | 'project' | 'userStory';
   dependencies?: string[];
   assignees?: User[];
 }
 
-export interface SprintCompletionValidation {
-  isValid: boolean;
-  incompleteUserStories: UserStory[];
-  incompleteSubtasks: Subtask[];
-  errors: string[];
-}

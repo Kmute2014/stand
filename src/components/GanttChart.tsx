@@ -1,14 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { ArrowLeft, Calendar, Users, MoreVertical, ChevronRight } from 'lucide-react';
-import { Project, Sprint, UserStory, Status, GanttTask } from '../types/project';
+import { Project, UserStory, Status, GanttTask } from '../types/project';
 import { format, differenceInDays, addDays, isWithinInterval, parseISO } from 'date-fns';
 
 interface GanttChartProps {
-  data: Project | Sprint;
-  type: 'project' | 'sprint';
+  data: Project;
+  type: 'project';
   projectName?: string;
   programName?: string;
-  sprintName?: string;
   onBack: () => void;
 }
 
@@ -17,7 +16,6 @@ export const GanttChart: React.FC<GanttChartProps> = ({
   type,
   projectName,
   programName,
-  sprintName,
   onBack,
 }) => {
   const [selectedTask, setSelectedTask] = useState<GanttTask | null>(null);
@@ -27,7 +25,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
 
     if (type === 'project') {
       const project = data as Project;
-      
+
       // Add project as main task
       tasks.push({
         id: project.id,
@@ -39,70 +37,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
         type: 'project',
       });
 
-      // Add sprints
-      project.sprints.forEach((sprint, index) => {
-        tasks.push({
-          id: sprint.id,
-          name: sprint.name,
-          startDate: sprint.startDate,
-          endDate: sprint.endDate,
-          progress: sprint.status === 'Completed' ? 100 : sprint.status === 'In Progress' ? 50 : 0,
-          status: sprint.status,
-          type: 'sprint',
-          dependencies: index > 0 ? [project.sprints[index - 1].id] : [],
-        });
-
-        // Add user stories from all epics in the sprint
-        sprint.epics.forEach(epic => {
-          epic.columns.forEach(column => {
-            column.userStories.forEach(story => {
-              tasks.push({
-                id: story.id,
-                name: story.title,
-                startDate: story.dueDate ? addDays(story.dueDate, -7) : sprint.startDate,
-                endDate: story.dueDate || sprint.endDate,
-                progress: story.status === 'Completed' ? 100 : story.status === 'In Progress' ? 50 : 0,
-                status: story.status,
-                type: 'userStory',
-                dependencies: [sprint.id],
-                assignees: story.assignees,
-              });
-            });
-          });
-        });
-      });
-    } else {
-      const sprint = data as Sprint;
-      
-      // Add sprint as main task
-      tasks.push({
-        id: sprint.id,
-        name: sprint.name,
-        startDate: sprint.startDate,
-        endDate: sprint.endDate,
-        progress: sprint.status === 'Completed' ? 100 : sprint.status === 'In Progress' ? 50 : 0,
-        status: sprint.status,
-        type: 'sprint',
-      });
-
-      // Add user stories from all epics in the sprint
-      sprint.epics.forEach(epic => {
-        epic.columns.forEach(column => {
-          column.userStories.forEach(story => {
-            tasks.push({
-              id: story.id,
-              name: story.title,
-              startDate: story.dueDate ? addDays(story.dueDate, -7) : sprint.startDate,
-              endDate: story.dueDate || sprint.endDate,
-              progress: story.status === 'Completed' ? 100 : story.status === 'In Progress' ? 50 : 0,
-              status: story.status,
-              type: 'userStory',
-              dependencies: [sprint.id],
-              assignees: story.assignees,
-            });
-          });
-        });
-      });
+      // Note: Sprint functionality removed - projects now contain user stories directly
     }
 
     return tasks;
@@ -127,7 +62,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
         return 'bg-green-500';
       case 'In Progress':
         return 'bg-blue-500';
-      case 'Not Started':
+      case 'Product Backlog':
         return 'bg-gray-400';
       default:
         return 'bg-gray-400';
@@ -138,8 +73,6 @@ export const GanttChart: React.FC<GanttChartProps> = ({
     switch (type) {
       case 'project':
         return 'border-purple-500';
-      case 'sprint':
-        return 'border-blue-500';
       case 'userStory':
         return 'border-orange-500';
       default:
@@ -150,7 +83,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
   const getTaskPosition = (task: GanttTask) => {
     const startOffset = differenceInDays(task.startDate, startDate);
     const duration = differenceInDays(task.endDate, task.startDate) + 1;
-    
+
     return {
       left: `${(startOffset / totalDays) * 100}%`,
       width: `${(duration / totalDays) * 100}%`,
@@ -160,21 +93,21 @@ export const GanttChart: React.FC<GanttChartProps> = ({
   const generateMonthHeaders = () => {
     const headers = [];
     let currentDate = new Date(startDate);
-    
+
     while (currentDate <= endDate) {
       const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
       const monthDays = Math.min(differenceInDays(monthEnd, currentDate) + 1, differenceInDays(endDate, currentDate) + 1);
-      
+
       headers.push({
         name: format(currentDate, 'MMM yyyy'),
         days: monthDays,
         width: `${(monthDays / totalDays) * 100}%`,
       });
-      
+
       currentDate = addDays(currentDate, monthDays);
     }
-    
+
     return headers;
   };
 
@@ -193,11 +126,10 @@ export const GanttChart: React.FC<GanttChartProps> = ({
           <div>
             <div className="text-sm text-gray-600">
               {programName && `${programName} / `}
-              {projectName && `${projectName} / `}
-              {sprintName && sprintName}
+              {projectName && projectName}
             </div>
             <h1 className="text-3xl font-bold text-gray-900">
-              Gantt Chart - {type === 'project' ? (data as Project).name : (data as Sprint).name}
+              Gantt Chart - {(data as Project).name}
             </h1>
           </div>
         </div>
@@ -224,7 +156,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Day markers */}
                 <div className="flex">
                   {Array.from({ length: totalDays }, (_, i) => (
@@ -284,7 +216,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="p-4 relative">
                   <div className="relative h-8">
                     <div
@@ -323,7 +255,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 ×
               </button>
             </div>
-            
+
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Type:</span>
@@ -351,7 +283,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 <span className="text-sm text-gray-600">Progress:</span>
                 <span className="text-sm font-medium text-gray-900">{selectedTask.progress}%</span>
               </div>
-              
+
               {selectedTask.assignees && selectedTask.assignees.length > 0 && (
                 <div>
                   <span className="text-sm text-gray-600">Assignees:</span>
@@ -371,7 +303,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 </div>
               )}
             </div>
-            
+
             <div className="mt-6 pt-4 border-t border-gray-200">
               <button
                 onClick={() => setSelectedTask(null)}

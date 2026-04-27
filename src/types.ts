@@ -68,7 +68,6 @@ export type Project = {
     email: string;
     role: Role;
   }[];
-  sprints: any[]; // Will be populated with Sprint data later
   programId: string;
   createdAt: string;
   updatedAt: string;
