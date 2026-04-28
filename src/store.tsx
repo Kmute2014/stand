@@ -49,6 +49,18 @@ interface AppState {
   setEditingUser: (user: User | null) => void;
   editingResponse: StandupResponse | null;
   setEditingResponse: (response: StandupResponse | null) => void;
+  // Sprint Board modal states
+  sprintBoardModals: {
+    showCreateSprintModal: boolean;
+    showCreateEpicModal: boolean;
+    showCreateUserStoryModal: boolean;
+    showEditUserStoryModal: boolean;
+    selectedProject: Project | null;
+    selectedSprint: Sprint | null;
+    selectedEpic: Epic | null;
+    editingUserStory: UserStory | null;
+  };
+  setSprintBoardModals: (modals: Partial<AppState['sprintBoardModals']>) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -78,6 +90,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editingResponse, setEditingResponse] = useState<StandupResponse | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // Sprint Board modal states
+  const [sprintBoardModals, setSprintBoardModalsState] = useState({
+    showCreateSprintModal: false,
+    showCreateEpicModal: false,
+    showCreateUserStoryModal: false,
+    showEditUserStoryModal: false,
+    selectedProject: null,
+    selectedSprint: null,
+    selectedEpic: null,
+    editingUserStory: null,
+  });
+
+  const setSprintBoardModals = (modals: Partial<typeof sprintBoardModals>) => {
+    setSprintBoardModalsState(prev => ({ ...prev, ...modals }));
+  };
 
   // 1. Real-time Listeners (Responses, Users, Programs, Projects, & User Stories)
   useEffect(() => {
@@ -176,7 +204,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             description: docData.description || '',
             startDate: docData.startDate?.toDate?.() || new Date(),
             endDate: docData.endDate?.toDate?.() || new Date(),
-            status: docData.status || 'Product Backlog',
             projectId: docData.projectId || '',
             programId: docData.programId || '',
             epics: docData.epics || [],
@@ -631,7 +658,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       currentPage, setCurrentPage, currentUser, users, programs, projects, userStories, sprints, epics, responses, schedule, companySettings, notifications,
       showToast, toastConfig, addUser: () => { }, updateUser, deleteUser, submitStandup, updateResponse: () => { },
       updateSchedule, updateCompanySettings, deleteResponse, sendReminders, createProgram, updateProgram, deleteProgram, createProject, updateProject, deleteProject, createSprint, updateSprint, deleteSprint, createEpic, updateEpic, deleteEpic, addSprintComment, createUserStory, updateUserStory, deleteUserStory,
-      editingUser, setEditingUser, editingResponse, setEditingResponse
+      editingUser, setEditingUser, editingResponse, setEditingResponse,
+      sprintBoardModals, setSprintBoardModals
     }}>
       {children}
     </AppContext.Provider>

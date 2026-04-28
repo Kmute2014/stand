@@ -105,7 +105,6 @@ export interface Sprint {
   description?: string;
   startDate: Date;
   endDate: Date;
-  status: Status;
   projectId: string;
   programId: string;
   epics: Epic[];

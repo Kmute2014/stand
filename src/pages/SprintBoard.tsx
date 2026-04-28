@@ -25,20 +25,25 @@ export const SprintBoard: React.FC = () => {
     createUserStory,
     updateUserStory,
     deleteUserStory,
-    showToast
+    showToast,
+    sprintBoardModals,
+    setSprintBoardModals
   } = useAppContext();
 
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [selectedSprint, setSelectedSprint] = useState<Sprint | null>(null);
-  const [showCreateSprintModal, setShowCreateSprintModal] = useState(false);
-  const [showCreateEpicModal, setShowCreateEpicModal] = useState(false);
-  const [selectedEpic, setSelectedEpic] = useState<Epic | null>(null);
+  // Use global state instead of local state
+  const selectedProject = sprintBoardModals.selectedProject;
+  const selectedSprint = sprintBoardModals.selectedSprint;
+  const selectedEpic = sprintBoardModals.selectedEpic;
+  const editingUserStory = sprintBoardModals.editingUserStory;
+  const showCreateSprintModal = sprintBoardModals.showCreateSprintModal;
+  const showCreateEpicModal = sprintBoardModals.showCreateEpicModal;
+  const showCreateUserStoryModal = sprintBoardModals.showCreateUserStoryModal;
+  const showEditUserStoryModal = sprintBoardModals.showEditUserStoryModal;
+
+  // Local state for editing sprints/epics and comments
   const [editingSprint, setEditingSprint] = useState<Sprint | null>(null);
   const [editingEpic, setEditingEpic] = useState<Epic | null>(null);
   const [newComment, setNewComment] = useState('');
-  const [showCreateUserStoryModal, setShowCreateUserStoryModal] = useState(false);
-  const [editingUserStory, setEditingUserStory] = useState<UserStory | null>(null);
-  const [showEditUserStoryModal, setShowEditUserStoryModal] = useState(false);
 
   // Filter sprints by selected project
   const projectSprints = selectedProject
@@ -63,7 +68,7 @@ export const SprintBoard: React.FC = () => {
         comments: []
       });
       showToast('Sprint created successfully!', 'green');
-      setShowCreateSprintModal(false);
+      setSprintBoardModals({ showCreateSprintModal: false });
     } catch (error) {
       showToast('Failed to create sprint', 'red');
     }
@@ -80,7 +85,7 @@ export const SprintBoard: React.FC = () => {
         sprintId: selectedSprint.id
       });
       showToast('Epic created successfully!', 'green');
-      setShowCreateEpicModal(false);
+      setSprintBoardModals({ showCreateEpicModal: false });
     } catch (error) {
       showToast('Failed to create epic', 'red');
     }
@@ -89,7 +94,7 @@ export const SprintBoard: React.FC = () => {
   // Edit and delete handlers
   const handleEditSprint = (sprint: Sprint) => {
     setEditingSprint(sprint);
-    setShowCreateSprintModal(true);
+    setSprintBoardModals({ showCreateSprintModal: true });
   };
 
   const handleDeleteSprint = async (sprint: Sprint) => {
@@ -105,7 +110,7 @@ export const SprintBoard: React.FC = () => {
 
   const handleEditEpic = (epic: Epic) => {
     setEditingEpic(epic);
-    setShowCreateEpicModal(true);
+    setSprintBoardModals({ showCreateEpicModal: true });
   };
 
   const handleDeleteEpic = async (epic: Epic) => {
@@ -138,12 +143,12 @@ export const SprintBoard: React.FC = () => {
   // User Story handlers
   const handleCreateUserStory = () => {
     if (!selectedEpic) return;
-    setShowCreateUserStoryModal(true);
+    setSprintBoardModals({ showCreateUserStoryModal: true });
   };
 
   const handleEditUserStory = (story: UserStory) => {
-    setEditingUserStory(story);
-    setShowEditUserStoryModal(true);
+    setSprintBoardModals({ editingUserStory: story });
+    setSprintBoardModals({ showEditUserStoryModal: true });
   };
 
   const handleDeleteUserStory = async (storyId: string) => {
@@ -215,9 +220,9 @@ export const SprintBoard: React.FC = () => {
               value={selectedProject?.id || ''}
               onChange={(e) => {
                 const project = projects.find(p => p.id === e.target.value);
-                setSelectedProject(project || null);
-                setSelectedSprint(null);
-                setSelectedEpic(null);
+                setSprintBoardModals({ selectedProject: project || null });
+                setSprintBoardModals({ selectedSprint: null });
+                setSprintBoardModals({ selectedEpic: null });
               }}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900"
             >
@@ -240,7 +245,7 @@ export const SprintBoard: React.FC = () => {
                     <p className="text-sm text-gray-600">Manage your project sprints and timelines</p>
                   </div>
                   <button
-                    onClick={() => setShowCreateSprintModal(true)}
+                    onClick={() => setSprintBoardModals({ showCreateSprintModal: true })}
                     className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-sm"
                   >
                     <Plus className="w-4 h-4" />
@@ -256,7 +261,7 @@ export const SprintBoard: React.FC = () => {
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No sprints yet</h3>
                     <p className="text-gray-600 mb-4">Create your first sprint to start organizing your work</p>
                     <button
-                      onClick={() => setShowCreateSprintModal(true)}
+                      onClick={() => setSprintBoardModals({ showCreateSprintModal: true })}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                       <Plus className="w-4 h-4" />
@@ -272,10 +277,7 @@ export const SprintBoard: React.FC = () => {
                           ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg'
                           : 'border-gray-200 hover:border-gray-300 hover:shadow-md bg-white'
                           }`}
-                        onClick={() => {
-                          setSelectedSprint(sprint);
-                          setSelectedEpic(null);
-                        }}
+                        onClick={() => setSprintBoardModals({ selectedSprint: sprint })}
                       >
                         {selectedSprint?.id === sprint.id && (
                           <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
@@ -319,17 +321,9 @@ export const SprintBoard: React.FC = () => {
                             <Calendar className="w-3 h-3" />
                             <span>{sprint.startDate.toLocaleDateString()} - {sprint.endDate.toLocaleDateString()}</span>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-xs text-gray-600">
-                              <MessageSquare className="w-3 h-3" />
-                              <span>{sprint.comments.length} comments</span>
-                            </div>
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${sprint.status === 'Completed' ? 'bg-green-100 text-green-700' :
-                              sprint.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                                'bg-gray-100 text-gray-700'
-                              }`}>
-                              {sprint.status}
-                            </span>
+                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                            <MessageSquare className="w-3 h-3" />
+                            <span>{sprint.comments.length} comments</span>
                           </div>
                         </div>
                       </div>
@@ -350,7 +344,7 @@ export const SprintBoard: React.FC = () => {
                         <p className="text-sm text-gray-600">Organize your work into epics and user stories</p>
                       </div>
                       <button
-                        onClick={() => setShowCreateEpicModal(true)}
+                        onClick={() => setSprintBoardModals({ showCreateEpicModal: true })}
                         className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all transform hover:scale-105 shadow-sm"
                       >
                         <Plus className="w-4 h-4" />
@@ -380,7 +374,7 @@ export const SprintBoard: React.FC = () => {
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No epics yet</h3>
                         <p className="text-gray-600 mb-4">Create your first epic to start organizing user stories</p>
                         <button
-                          onClick={() => setShowCreateEpicModal(true)}
+                          onClick={() => setSprintBoardModals({ showCreateEpicModal: true })}
                           className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                         >
                           <Plus className="w-4 h-4" />
@@ -401,7 +395,7 @@ export const SprintBoard: React.FC = () => {
                                 ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg'
                                 : 'border-gray-200 hover:border-gray-300 hover:shadow-md bg-white'
                                 }`}
-                              onClick={() => setSelectedEpic(epic)}
+                              onClick={() => setSprintBoardModals({ selectedEpic: epic })}
                             >
                               {selectedEpic?.id === epic.id && (
                                 <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
@@ -525,7 +519,7 @@ export const SprintBoard: React.FC = () => {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Create Sprint</h2>
                 <button
-                  onClick={() => setShowCreateSprintModal(false)}
+                  onClick={() => setSprintBoardModals({ showCreateSprintModal: false })}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <span className="text-gray-400 text-xl">×</span>
@@ -539,7 +533,6 @@ export const SprintBoard: React.FC = () => {
                   description: formData.get('description') as string,
                   startDate: new Date(formData.get('startDate') as string),
                   endDate: new Date(formData.get('endDate') as string),
-                  status: 'Product Backlog',
                   projectId: selectedProject.id,
                   programId: selectedProject.programId,
                   epics: [],
@@ -586,7 +579,7 @@ export const SprintBoard: React.FC = () => {
                 <div className="flex justify-end gap-3 mt-6">
                   <button
                     type="button"
-                    onClick={() => setShowCreateSprintModal(false)}
+                    onClick={() => setSprintBoardModals({ showCreateSprintModal: false })}
                     className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                   >
                     Cancel
@@ -615,7 +608,7 @@ export const SprintBoard: React.FC = () => {
                   name: formData.get('name') as string,
                   description: formData.get('description') as string,
                   priority: formData.get('priority') as 'Low' | 'Medium' | 'High' | 'Critical',
-                  status: 'Product Backlog',
+                  status: 'Refined Backlog',
                   projectId: selectedProject.id,
                   programId: selectedProject.programId,
                   sprintId: selectedSprint.id
@@ -656,7 +649,7 @@ export const SprintBoard: React.FC = () => {
                 <div className="flex justify-end gap-3 mt-6">
                   <button
                     type="button"
-                    onClick={() => setShowCreateEpicModal(false)}
+                    onClick={() => setSprintBoardModals({ showCreateEpicModal: false })}
                     className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                   >
                     Cancel
@@ -676,7 +669,7 @@ export const SprintBoard: React.FC = () => {
         {/* Create User Story Modal */}
         <CreateUserStoryModal
           isOpen={showCreateUserStoryModal && !!selectedEpic}
-          onClose={() => setShowCreateUserStoryModal(false)}
+          onClose={() => setSprintBoardModals({ showCreateUserStoryModal: false })}
           epicId={selectedEpic?.id}
           projectId={selectedProject?.id}
           programId={selectedProject?.programId}
@@ -685,7 +678,7 @@ export const SprintBoard: React.FC = () => {
         {/* Edit User Story Modal */}
         <EditUserStoryModal
           isOpen={showEditUserStoryModal}
-          onClose={() => setShowEditUserStoryModal(false)}
+          onClose={() => setSprintBoardModals({ showEditUserStoryModal: false })}
           userStory={editingUserStory}
           onUpdate={handleUpdateUserStory}
         />
