@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, StandupResponse, Schedule, NotificationLog, CompanySettings } from './types';
-import { Project, Program, UserStory } from './types/project';
+import { Project, Program, UserStory, Sprint, Epic, SprintComment } from './types/project';
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -13,6 +13,8 @@ interface AppState {
   programs: Program[];
   projects: Project[];
   userStories: UserStory[];
+  sprints: Sprint[];
+  epics: Epic[];
   schedule: Schedule;
   companySettings: CompanySettings;
   notifications: NotificationLog[];
@@ -33,6 +35,16 @@ interface AppState {
   createProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateProject: (id: string, updates: Partial<Project>) => void;
   deleteProject: (id: string) => void;
+  createSprint: (sprint: Omit<Sprint, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateSprint: (id: string, updates: Partial<Sprint>) => void;
+  deleteSprint: (id: string) => void;
+  createEpic: (epic: Omit<Epic, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateEpic: (id: string, updates: Partial<Epic>) => void;
+  deleteEpic: (id: string) => void;
+  addSprintComment: (sprintId: string, comment: Omit<SprintComment, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  createUserStory: (userStory: Omit<UserStory, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateUserStory: (id: string, updates: Partial<UserStory>) => void;
+  deleteUserStory: (id: string) => void;
   editingUser: User | null;
   setEditingUser: (user: User | null) => void;
   editingResponse: StandupResponse | null;
@@ -48,6 +60,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [programs, setPrograms] = useState<Program[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [userStories, setUserStories] = useState<UserStory[]>([]);
+  const [sprints, setSprints] = useState<Sprint[]>([]);
+  const [epics, setEpics] = useState<Epic[]>([]);
   const [notifications, setNotifications] = useState<NotificationLog[]>([]);
   const [schedule, setSchedule] = useState<Schedule>({
     activeDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
@@ -73,6 +87,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     let unsubPrograms: (() => void) | undefined;
     let unsubProjects: (() => void) | undefined;
     let unsubUserStories: (() => void) | undefined;
+    let unsubSprints: (() => void) | undefined;
+    let unsubEpics: (() => void) | undefined;
 
     const setupListeners = async () => {
       const { collection, onSnapshot, orderBy, query } = await import('firebase/firestore');
@@ -137,21 +153,65 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             description: docData.description,
             priority: docData.priority || 'Medium',
             estimate: docData.estimate || 1,
-            status: docData.status || 'Backlog',
+            status: docData.status || 'Product Backlog',
             projectId: docData.projectId || '',
             programId: docData.programId || '',
             order: docData.order || 1,
             createdAt: docData.createdAt?.toDate?.() || new Date(),
             updatedAt: docData.updatedAt?.toDate?.() || new Date(),
+            sprintId: docData.sprintId || '',
           } as UserStory;
         });
         console.log('User Stories data loaded:', data);
         setUserStories(data);
       });
+
+      unsubSprints = onSnapshot(collection(db, 'sprints'), (snapshot) => {
+        const data = snapshot.docs.map(doc => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            name: docData.name || '',
+            description: docData.description || '',
+            startDate: docData.startDate?.toDate?.() || new Date(),
+            endDate: docData.endDate?.toDate?.() || new Date(),
+            status: docData.status || 'Product Backlog',
+            projectId: docData.projectId || '',
+            programId: docData.programId || '',
+            epics: docData.epics || [],
+            comments: docData.comments || [],
+            createdAt: docData.createdAt?.toDate?.() || new Date(),
+            updatedAt: docData.updatedAt?.toDate?.() || new Date(),
+          } as Sprint;
+        });
+        console.log('Sprints data loaded:', data);
+        setSprints(data);
+      });
+
+      unsubEpics = onSnapshot(collection(db, 'epics'), (snapshot) => {
+        const data = snapshot.docs.map(doc => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            name: docData.name || '',
+            description: docData.description || '',
+            status: docData.status || 'Product Backlog',
+            priority: docData.priority || 'Medium',
+            projectId: docData.projectId || '',
+            programId: docData.programId || '',
+            sprintId: docData.sprintId,
+            userStories: docData.userStories || [],
+            createdAt: docData.createdAt?.toDate?.() || new Date(),
+            updatedAt: docData.updatedAt?.toDate?.() || new Date(),
+          } as Epic;
+        });
+        console.log('Epics data loaded:', data);
+        setEpics(data);
+      });
     };
 
     setupListeners();
-    return () => { unsubResponses?.(); unsubUsers?.(); unsubPrograms?.(); unsubProjects?.(); unsubUserStories?.(); };
+    return () => { unsubResponses?.(); unsubUsers?.(); unsubPrograms?.(); unsubProjects?.(); unsubUserStories?.(); unsubSprints?.(); unsubEpics?.(); };
   }, [currentUser?.id]);
 
   // 2. Fetch Global Settings (Schedule & Company) on Load
@@ -413,6 +473,114 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  // Sprint Management Functions
+  const createSprint = async (sprintData: Omit<Sprint, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+      const docRef = await addDoc(collection(db, 'sprints'), {
+        ...sprintData,
+        startDate: sprintData.startDate,
+        endDate: sprintData.endDate,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      showToast('Sprint created successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to create sprint.', 'red');
+    }
+  };
+
+  const updateSprint = async (id: string, updates: Partial<Sprint>) => {
+    try {
+      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+      await updateDoc(doc(db, 'sprints', id), {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+      showToast('Sprint updated successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to update sprint.', 'red');
+    }
+  };
+
+  const deleteSprint = async (id: string) => {
+    // Check if current user has permission
+    if (!currentUser || (currentUser.role !== 'Admin' && currentUser.role !== 'Project Manager/Scrum Master')) {
+      showToast('Only admins and project managers can delete sprints.', 'red');
+      return;
+    }
+
+    try {
+      const { doc, deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, 'sprints', id));
+      showToast('Sprint deleted successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to delete sprint.', 'red');
+    }
+  };
+
+  // Epic Management Functions
+  const createEpic = async (epicData: Omit<Epic, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+      const docRef = await addDoc(collection(db, 'epics'), {
+        ...epicData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      showToast('Epic created successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to create epic.', 'red');
+    }
+  };
+
+  const updateEpic = async (id: string, updates: Partial<Epic>) => {
+    try {
+      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+      await updateDoc(doc(db, 'epics', id), {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+      showToast('Epic updated successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to update epic.', 'red');
+    }
+  };
+
+  const deleteEpic = async (id: string) => {
+    // Check if current user has permission
+    if (!currentUser || (currentUser.role !== 'Admin' && currentUser.role !== 'Project Manager/Scrum Master')) {
+      showToast('Only admins and project managers can delete epics.', 'red');
+      return;
+    }
+
+    try {
+      const { doc, deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, 'epics', id));
+      showToast('Epic deleted successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to delete epic.', 'red');
+    }
+  };
+
+  const addSprintComment = async (sprintId: string, commentData: Omit<SprintComment, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const { doc, updateDoc, serverTimestamp, arrayUnion } = await import('firebase/firestore');
+      const comment = {
+        ...commentData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      await updateDoc(doc(db, 'sprints', sprintId), {
+        comments: arrayUnion(comment),
+        updatedAt: serverTimestamp(),
+      });
+      showToast('Comment added successfully.', 'green');
+    } catch (err) {
+      showToast('Failed to add comment.', 'red');
+    }
+  };
+
   // User Story Management Functions
   const createUserStory = async (userStoryData: Omit<UserStory, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
@@ -459,9 +627,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{
-      currentPage, setCurrentPage, currentUser, users, programs, projects, userStories, responses, schedule, companySettings, notifications,
+      currentPage, setCurrentPage, currentUser, users, programs, projects, userStories, sprints, epics, responses, schedule, companySettings, notifications,
       showToast, toastConfig, addUser: () => { }, updateUser, deleteUser, submitStandup, updateResponse: () => { },
-      updateSchedule, updateCompanySettings, deleteResponse, sendReminders, createProgram, updateProgram, deleteProgram, createProject, updateProject, deleteProject, createUserStory, updateUserStory, deleteUserStory,
+      updateSchedule, updateCompanySettings, deleteResponse, sendReminders, createProgram, updateProgram, deleteProgram, createProject, updateProject, deleteProject, createSprint, updateSprint, deleteSprint, createEpic, updateEpic, deleteEpic, addSprintComment, createUserStory, updateUserStory, deleteUserStory,
       editingUser, setEditingUser, editingResponse, setEditingResponse
     }}>
       {children}

@@ -74,35 +74,6 @@ export const hasPermission = (user: User | undefined, permission: Permission): b
   }
 };
 
-export interface UserStory {
-  id: string;
-  title: string;
-  status: Status;
-  priority: Priority;
-  assignees: User[];
-  subtasks: Subtask[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Subtask {
-  id: string;
-  title: string;
-  completed: boolean;
-  assignee?: User;
-  dueDate?: Date;
-  comments: Comment[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Comment {
-  id: string;
-  content: string;
-  author: User;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 export interface KanbanColumn {
   id: string;
@@ -114,23 +85,42 @@ export interface KanbanColumn {
   updatedAt: Date;
 }
 
-export interface UserStory {
+
+export interface Epic {
   id: string;
-  title: string; // Enforced format: "As a [user], I want [action], so that [value]"
-  user: string; // Extracted from title - the "user" part
-  action: string; // Extracted from title - the "action" part  
-  value: string; // Extracted from title - the "value" part
-  description?: string; // Additional details if needed
+  name: string;
+  description?: string;
+  status: Status;
   priority: Priority;
-  estimate: number; // Story points or hours
-  status: Status; // Default "Backlog"
   projectId: string;
   programId: string;
-  order: number; // For ordering within project
+  sprintId?: string; // Optional sprint assignment
   createdAt: Date;
   updatedAt: Date;
 }
 
+export interface Sprint {
+  id: string;
+  name: string;
+  description?: string;
+  startDate: Date;
+  endDate: Date;
+  status: Status;
+  projectId: string;
+  programId: string;
+  epics: Epic[];
+  comments: SprintComment[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SprintComment {
+  id: string;
+  content: string;
+  author: User;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface Project {
   id: string;
@@ -163,7 +153,7 @@ export interface GanttTask {
   endDate: Date;
   progress: number;
   status: Status;
-  type: 'program' | 'project' | 'userStory';
+  type: 'program' | 'project';
   dependencies?: string[];
   assignees?: User[];
 }
