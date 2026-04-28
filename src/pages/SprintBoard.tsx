@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../store';
 import { Plus, Calendar, Users, MessageSquare, MoreVertical, Edit2, Trash2 } from 'lucide-react';
-import { Sprint, Epic, Project } from '../types/project';
+import { Sprint, Epic, Project, UserStory } from '../types/project';
+import { EpicKanbanBoard } from '../components/EpicKanbanBoard';
+import { CreateUserStoryModal } from '../components/CreateUserStoryModal';
+import { EditUserStoryModal } from '../components/EditUserStoryModal';
 
 export const SprintBoard: React.FC = () => {
   const {
     currentUser,
+    users,
     projects,
     sprints,
     epics,
+    userStories,
     createSprint,
     createEpic,
     deleteSprint,
@@ -17,6 +22,9 @@ export const SprintBoard: React.FC = () => {
     updateEpic,
     updateProject,
     addSprintComment,
+    createUserStory,
+    updateUserStory,
+    deleteUserStory,
     showToast
   } = useAppContext();
 
@@ -28,6 +36,9 @@ export const SprintBoard: React.FC = () => {
   const [editingSprint, setEditingSprint] = useState<Sprint | null>(null);
   const [editingEpic, setEditingEpic] = useState<Epic | null>(null);
   const [newComment, setNewComment] = useState('');
+  const [showCreateUserStoryModal, setShowCreateUserStoryModal] = useState(false);
+  const [editingUserStory, setEditingUserStory] = useState<UserStory | null>(null);
+  const [showEditUserStoryModal, setShowEditUserStoryModal] = useState(false);
 
   // Filter sprints by selected project
   const projectSprints = selectedProject
@@ -123,6 +134,37 @@ export const SprintBoard: React.FC = () => {
       showToast('Failed to add comment', 'red');
     }
   };
+
+  // User Story handlers
+  const handleCreateUserStory = () => {
+    if (!selectedEpic) return;
+    setShowCreateUserStoryModal(true);
+  };
+
+  const handleEditUserStory = (story: UserStory) => {
+    setEditingUserStory(story);
+    setShowEditUserStoryModal(true);
+  };
+
+  const handleDeleteUserStory = async (storyId: string) => {
+    if (window.confirm('Are you sure you want to delete this user story?')) {
+      try {
+        await deleteUserStory(storyId);
+        showToast('User story deleted successfully!', 'green');
+      } catch (error) {
+        showToast('Failed to delete user story', 'red');
+      }
+    }
+  };
+
+  const handleUpdateUserStory = async (storyId: string, updates: any) => {
+    try {
+      await updateUserStory(storyId, updates);
+    } catch (error) {
+      showToast('Failed to update user story', 'red');
+    }
+  };
+
 
   return (
     <div className="p-6">
@@ -290,6 +332,27 @@ export const SprintBoard: React.FC = () => {
                 </div>
               </div>
 
+              {/* User Stories Kanban Board - Show when epic is selected */}
+              {selectedEpic && (
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">User Stories for {selectedEpic.name}</h2>
+                    <div className="text-sm text-gray-500">
+                      Drag and drop stories to move them between columns
+                    </div>
+                  </div>
+                  <EpicKanbanBoard
+                    epicId={selectedEpic.id}
+                    userStories={userStories}
+                    users={users}
+                    onCreateUserStory={handleCreateUserStory}
+                    onEditUserStory={handleEditUserStory}
+                    onDeleteUserStory={handleDeleteUserStory}
+                    onUpdateUserStory={handleUpdateUserStory}
+                  />
+                </div>
+              )}
+
             </>
           )}
         </>
@@ -441,6 +504,23 @@ export const SprintBoard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Create User Story Modal */}
+      <CreateUserStoryModal
+        isOpen={showCreateUserStoryModal && !!selectedEpic}
+        onClose={() => setShowCreateUserStoryModal(false)}
+        epicId={selectedEpic?.id}
+        projectId={selectedProject?.id}
+        programId={selectedProject?.programId}
+      />
+
+      {/* Edit User Story Modal */}
+      <EditUserStoryModal
+        isOpen={showEditUserStoryModal}
+        onClose={() => setShowEditUserStoryModal(false)}
+        userStory={editingUserStory}
+        onUpdate={handleUpdateUserStory}
+      />
 
     </div>
   );

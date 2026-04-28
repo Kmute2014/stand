@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, StandupResponse, Schedule, NotificationLog, CompanySettings } from './types';
-import { Project, Program, UserStory, Sprint, Epic, SprintComment } from './types/project';
+import { Project, Program, UserStory, Sprint, Epic, SprintComment, Task } from './types/project';
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -153,13 +153,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             description: docData.description,
             priority: docData.priority || 'Medium',
             estimate: docData.estimate || 1,
-            status: docData.status || 'Product Backlog',
+            status: docData.status || 'Backlog',
             projectId: docData.projectId || '',
             programId: docData.programId || '',
+            epicId: docData.epicId,
+            tasks: docData.tasks || [],
             order: docData.order || 1,
             createdAt: docData.createdAt?.toDate?.() || new Date(),
             updatedAt: docData.updatedAt?.toDate?.() || new Date(),
-            sprintId: docData.sprintId || '',
           } as UserStory;
         });
         console.log('User Stories data loaded:', data);

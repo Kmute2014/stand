@@ -146,6 +146,36 @@ export interface Program {
   updatedAt: Date;
 }
 
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'Todo' | 'In Progress' | 'Done';
+  assigneeId?: string;
+  estimate?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserStory {
+  id: string;
+  title: string;
+  user: string;
+  action: string;
+  value: string;
+  description?: string;
+  priority: Priority;
+  estimate: number;
+  status: Status;
+  projectId: string;
+  programId: string;
+  epicId?: string;
+  tasks: Task[];
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface GanttTask {
   id: string;
   name: string;

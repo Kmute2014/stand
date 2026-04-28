@@ -1,44 +1,73 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../store';
-import { db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { Priority, Status, Task } from '../types/project';
+import { Priority, Status, Task, UserStory } from '../types/project';
 import { Trash2 } from 'lucide-react';
 
+// Define the kanban status mapping
+const KANBAN_STATUS_MAP = {
+  'Backlog': 'Product Backlog' as Status,
+  'To Do': 'Refined Backlog' as Status,
+  'In Progress': 'In Progress' as Status,
+  'Testing': 'Testing' as Status,
+  'Done': 'Completed' as Status
+};
 
-interface CreateUserStoryModalProps {
-  epicId?: string;
-  projectId?: string;
-  programId?: string;
+const REVERSE_STATUS_MAP = {
+  'Product Backlog': 'Backlog',
+  'Refined Backlog': 'To Do',
+  'In Progress': 'In Progress',
+  'Testing': 'Testing',
+  'Completed': 'Done'
+};
+
+interface EditUserStoryModalProps {
+  userStory: UserStory | null;
   isOpen: boolean;
   onClose: () => void;
+  onUpdate: (storyId: string, updates: Partial<UserStory>) => void;
 }
 
-export const CreateUserStoryModal: React.FC<CreateUserStoryModalProps> = ({
-  epicId,
-  projectId: defaultProjectId,
-  programId: defaultProgramId,
+export const EditUserStoryModal: React.FC<EditUserStoryModalProps> = ({
+  userStory,
   isOpen,
-  onClose
+  onClose,
+  onUpdate
 }) => {
-  const { showToast, currentUser, projects, programs, users, createUserStory } = useAppContext();
+  const { showToast, currentUser, projects, programs, users } = useAppContext();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('Medium');
   const [estimate, setEstimate] = useState<number>(1);
-  const [selectedProjectId, setSelectedProjectId] = useState(defaultProjectId || '');
+  const [status, setStatus] = useState<Status>('Product Backlog');
   const [isLoading, setIsLoading] = useState(false);
-  const [tasks, setTasks] = useState<Omit<Task, 'id' | 'createdAt' | 'updatedAt'>[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskAssigneeId, setNewTaskAssigneeId] = useState('');
   const [newTaskEstimate, setNewTaskEstimate] = useState<number>(1);
 
-  // Check if current user has permission to create user stories
-  const canCreateUserStory = currentUser?.role === 'Admin' || currentUser?.role === 'Project Manager/Scrum Master';
+  // Check if current user has permission to edit user stories
+  const canEditUserStory = currentUser?.role === 'Admin' || currentUser?.role === 'Project Manager/Scrum Master';
 
-  const handleCreate = async () => {
-    if (!canCreateUserStory) {
-      showToast('Only admins and project managers can create user stories.', 'red');
+  // Initialize form when userStory changes
+  useEffect(() => {
+    if (userStory) {
+      setTitle(userStory.title);
+      setDescription(userStory.description || '');
+      setPriority(userStory.priority);
+      setEstimate(userStory.estimate);
+      setStatus(userStory.status);
+      setTasks(userStory.tasks.map(task => ({
+        ...task,
+        id: task.id,
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt
+      })));
+    }
+  }, [userStory]);
+
+  const handleUpdate = async () => {
+    if (!canEditUserStory) {
+      showToast('Only admins and project managers can edit user stories.', 'red');
       return;
     }
 
@@ -47,66 +76,30 @@ export const CreateUserStoryModal: React.FC<CreateUserStoryModalProps> = ({
       return;
     }
 
-    if (!selectedProjectId) {
-      showToast('Please select a project.', 'red');
-      return;
-    }
-
-    if (estimate <= 0) {
-      showToast('Estimate must be greater than 0.', 'red');
-      return;
-    }
+    if (!userStory) return;
 
     setIsLoading(true);
     try {
-      const selectedProject = projects.find(p => p.id === selectedProjectId);
-      const selectedProgram = programs.find(p => p.id === selectedProject?.programId) ||
-        programs.find(p => p.id === defaultProgramId);
-
-      if (!selectedProject || !selectedProgram) {
-        showToast('Invalid project selection.', 'red');
-        return;
-      }
-
-      // Create user story using context function
-      await createUserStory({
+      await onUpdate(userStory.id, {
         title: title.trim(),
-        user: '', // Not parsing format anymore
-        action: '', // Not parsing format anymore
-        value: '', // Not parsing format anymore
         description: description.trim(),
         priority,
         estimate,
-        status: 'Product Backlog' as Status, // Default status
-        projectId: selectedProject.id,
-        programId: selectedProgram.id,
-        epicId,
+        status,
         tasks: tasks.map(task => ({
           ...task,
-          id: crypto.randomUUID(),
-          createdAt: new Date(),
+          id: task.id || crypto.randomUUID(),
+          createdAt: task.createdAt || new Date(),
           updatedAt: new Date(),
         })),
-        order: 1, // Will be updated later when multiple stories exist
       });
 
-      showToast('User Story created successfully!', 'green');
-
-      // Reset form and close modal
-      setTitle('');
-      setDescription('');
-      setPriority('Medium');
-      setEstimate(1);
-      setSelectedProjectId(defaultProjectId || '');
-      setTasks([]);
-      setNewTaskTitle('');
-      setNewTaskAssigneeId('');
-      setNewTaskEstimate(1);
+      showToast('User Story updated successfully!', 'green');
       onClose();
     } catch (error: any) {
-      console.error('Error creating user story:', error);
+      console.error('Error updating user story:', error);
       const errorMsg = error?.message || 'Unknown error';
-      showToast(`Failed to create user story: ${errorMsg}`, 'red');
+      showToast(`Failed to update user story: ${errorMsg}`, 'red');
     } finally {
       setIsLoading(false);
     }
@@ -116,10 +109,13 @@ export const CreateUserStoryModal: React.FC<CreateUserStoryModalProps> = ({
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
       setTasks([...tasks, {
+        id: crypto.randomUUID(),
         title: newTaskTitle.trim(),
         status: 'Todo',
         assigneeId: newTaskAssigneeId || undefined,
-        estimate: newTaskEstimate
+        estimate: newTaskEstimate,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }]);
       setNewTaskTitle('');
       setNewTaskAssigneeId('');
@@ -147,13 +143,24 @@ export const CreateUserStoryModal: React.FC<CreateUserStoryModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
+  const getStatusColor = (status: Status) => {
+    switch (status) {
+      case 'Product Backlog': return 'bg-gray-100 text-gray-700 border-gray-300';
+      case 'Refined Backlog': return 'bg-blue-100 text-blue-700 border-blue-300';
+      case 'In Progress': return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+      case 'Testing': return 'bg-purple-100 text-purple-700 border-purple-300';
+      case 'Completed': return 'bg-green-100 text-green-700 border-green-300';
+      default: return 'bg-gray-100 text-gray-700 border-gray-300';
+    }
+  };
+
+  if (!isOpen || !userStory) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">{epicId ? 'Create User Story for Epic' : 'Create User Story'}</h2>
+          <h2 className="text-lg font-semibold">Edit User Story</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
@@ -162,23 +169,22 @@ export const CreateUserStoryModal: React.FC<CreateUserStoryModalProps> = ({
           </button>
         </div>
         <div className="modal-body">
-          {!canCreateUserStory && (
+          {!canEditUserStory && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-              Only admins and project managers can create user stories. Please contact an admin.
+              Only admins and project managers can edit user stories. Please contact an admin.
             </div>
           )}
 
-
           {/* User Story Title */}
-          <div className="form-group">
+          <div className="form-group mb-4">
             <label className="form-label">User Story Title *</label>
             <textarea
-              className={`form-input ${!title && 'border-red-300'}`}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 ${!title && 'border-red-300'}`}
               placeholder="Enter user story title..."
               rows={3}
               value={title}
               onChange={e => setTitle(e.target.value)}
-              disabled={!canCreateUserStory || isLoading}
+              disabled={!canEditUserStory || isLoading}
             />
             {!title && (
               <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
@@ -188,99 +194,67 @@ export const CreateUserStoryModal: React.FC<CreateUserStoryModalProps> = ({
           </div>
 
           {/* Description */}
-          <div className="form-group">
+          <div className="form-group mb-4">
             <label className="form-label">Additional Description</label>
             <textarea
-              className="form-input"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400"
               placeholder="Add any additional details, acceptance criteria, or notes..."
               rows={3}
               value={description}
               onChange={e => setDescription(e.target.value)}
-              disabled={!canCreateUserStory || isLoading}
+              disabled={!canEditUserStory || isLoading}
             />
           </div>
 
-          {/* Priority */}
-          <div className="form-group">
-            <label className="form-label">Priority *</label>
-            <select
-              className="form-input form-select"
-              value={priority}
-              onChange={e => setPriority(e.target.value as Priority)}
-              disabled={!canCreateUserStory || isLoading}
-            >
-              <option value="Critical">Critical</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-            <div className={`mt-2 p-2 rounded border text-sm ${getPriorityColor(priority)}`}>
-              <strong>Priority: {priority}</strong> - This determines the story's importance and urgency
+          {/* Priority and Status */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="form-group">
+              <label className="form-label">Priority *</label>
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as Priority)}
+                disabled={!canEditUserStory || isLoading}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400"
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Status *</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as Status)}
+                disabled={!canEditUserStory || isLoading}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400"
+              >
+                <option value="Product Backlog">Backlog</option>
+                <option value="Refined Backlog">To Do</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Testing">Testing</option>
+                <option value="Completed">Done</option>
+              </select>
             </div>
           </div>
 
           {/* Estimate */}
-          <div className="form-group">
-            <label className="form-label">Estimate *</label>
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <input
-                  type="number"
-                  className="form-input"
-                  placeholder="Enter estimate"
-                  min="1"
-                  max="100"
-                  value={estimate}
-                  onChange={e => setEstimate(Math.max(1, parseInt(e.target.value) || 1))}
-                  disabled={!canCreateUserStory || isLoading}
-                />
-              </div>
-              <div className="text-sm text-slate-600">
-                <div className="font-medium">Story Points</div>
-                <div className="text-xs">1-100 points</div>
-              </div>
-            </div>
+          <div className="form-group mb-4">
+            <label className="form-label">Story Points *</label>
+            <input
+              type="number"
+              min="1"
+              max="20"
+              value={estimate}
+              onChange={(e) => setEstimate(parseInt(e.target.value) || 1)}
+              disabled={!canEditUserStory || isLoading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400"
+            />
           </div>
 
-          {/* Project Selection */}
-          {!defaultProjectId && (
-            <div className="form-group">
-              <label className="form-label">Project *</label>
-              <select
-                className="form-input form-select"
-                value={selectedProjectId}
-                onChange={e => setSelectedProjectId(e.target.value)}
-                disabled={!canCreateUserStory || isLoading}
-              >
-                <option value="">Select a project...</option>
-                {projects.map(project => {
-                  const program = programs.find(p => p.id === project.programId);
-                  return (
-                    <option key={project.id} value={project.id}>
-                      {project.name} ({program?.name || 'Unknown Program'})
-                    </option>
-                  );
-                })}
-              </select>
-              {projects.length === 0 && (
-                <div className="text-xs text-amber-600 mt-1">
-                  No projects available. Please create a project first.
-                </div>
-              )}
-            </div>
-          )}
-
-          {defaultProjectId && (
-            <div className="form-group">
-              <label className="form-label">Project</label>
-              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                {projects.find(p => p.id === defaultProjectId)?.name || 'Selected Project'}
-              </div>
-            </div>
-          )}
-
           {/* Tasks Section */}
-          <div className="form-group">
+          <div className="form-group mb-4">
             <label className="form-label">Tasks (Optional)</label>
             <div className="space-y-3">
               {/* Existing Tasks */}
@@ -378,11 +352,11 @@ export const CreateUserStoryModal: React.FC<CreateUserStoryModalProps> = ({
             Cancel
           </button>
           <button
-            onClick={handleCreate}
-            disabled={isLoading || !canCreateUserStory || !title.trim() || !selectedProjectId || estimate <= 0}
+            onClick={handleUpdate}
+            disabled={isLoading || !canEditUserStory || !title.trim() || estimate <= 0}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Creating...' : 'Create User Story'}
+            {isLoading ? 'Updating...' : 'Update User Story'}
           </button>
         </div>
       </div>
