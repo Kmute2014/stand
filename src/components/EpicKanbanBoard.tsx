@@ -239,6 +239,53 @@ export const EpicKanbanBoard: React.FC<EpicKanbanBoardProps> = ({
           </div>
         </div>
 
+        {/* Tasks Summary */}
+        {story.tasks && story.tasks.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-gray-100">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500">Tasks</span>
+              <span className="text-xs text-green-600 font-medium">
+                {story.tasks.filter(task => task.status === 'Done').length}/{story.tasks.length}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2">
+              <div
+                className="bg-green-500 h-1.5 rounded-full transition-all duration-200"
+                style={{ width: `${(story.tasks.filter(task => task.status === 'Done').length / story.tasks.length) * 100}%` }}
+              ></div>
+            </div>
+            {/* Task checkboxes */}
+            <div className="space-y-1">
+              {story.tasks.slice(0, 3).map((task, index) => (
+                <div key={index} className="flex items-center gap-1 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={task.status === 'Done'}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      const updatedTasks = story.tasks.map((t, i) =>
+                        i === story.tasks.indexOf(task)
+                          ? { ...t, status: e.target.checked ? 'Done' as const : 'Todo' as const, updatedAt: new Date() }
+                          : t
+                      );
+                      onUpdateUserStory(story.id, { tasks: updatedTasks });
+                    }}
+                    className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className={`truncate ${task.status === 'Done' ? 'line-through text-gray-500' : 'text-gray-700'}`}>
+                    {task.title}
+                  </span>
+                </div>
+              ))}
+              {story.tasks.length > 3 && (
+                <div className="text-xs text-gray-500 italic">
+                  +{story.tasks.length - 3} more tasks...
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Navigation Arrows */}
         <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
           <button

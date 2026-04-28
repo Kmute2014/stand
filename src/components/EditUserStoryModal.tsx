@@ -260,13 +260,20 @@ export const EditUserStoryModal: React.FC<EditUserStoryModalProps> = ({
               {/* Existing Tasks */}
               {tasks.map((task, index) => (
                 <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-1">
+                    <input
+                      type="checkbox"
+                      checked={task.status === 'Done'}
+                      onChange={(e) => handleUpdateTask(index, 'status', e.target.checked ? 'Done' : 'Todo')}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
                     <input
                       type="text"
                       value={task.title}
                       onChange={(e) => handleUpdateTask(index, 'title', e.target.value)}
                       placeholder="Task title"
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+                      className={`flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400 ${task.status === 'Done' ? 'line-through text-gray-500' : 'text-gray-900'
+                        }`}
                     />
                   </div>
                   <select
@@ -336,7 +343,22 @@ export const EditUserStoryModal: React.FC<EditUserStoryModalProps> = ({
             </div>
             {tasks.length > 0 && (
               <div className="text-xs text-gray-500 mt-2">
-                {tasks.length} task(s) added • Total estimate: {tasks.reduce((sum, task) => sum + (task.estimate || 0), 0)} points
+                <div className="flex justify-between items-center">
+                  <span>{tasks.length} task(s) added • Total estimate: {tasks.reduce((sum, task) => sum + (task.estimate || 0), 0)} points</span>
+                  <span className="text-green-600 font-medium">
+                    {tasks.filter(task => task.status === 'Done').length}/{tasks.length} completed
+                  </span>
+                </div>
+                {tasks.length > 0 && (
+                  <div className="mt-1">
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                      <div
+                        className="bg-green-500 h-1.5 rounded-full transition-all duration-200"
+                        style={{ width: `${(tasks.filter(task => task.status === 'Done').length / tasks.length) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
