@@ -8,31 +8,40 @@ import {
 import { UserStory, Status, Priority } from '../types/project';
 
 export const Dashboard: React.FC = () => {
-  const { currentUser, responses, users, programs, sendReminders } = useAppContext();
+  const {
+    currentUser,
+    responses,
+    users,
+    programs,
+    projects,
+    sprints,
+    epics,
+    userStories,
+    sendReminders
+  } = useAppContext();
   const isAdmin = currentUser?.role === 'Admin';
   const canCreateProgram = currentUser?.role === 'Admin' || currentUser?.role === 'Project Manager/Scrum Master';
-
-  // Mock project data - in real app this would come from props or context
-  const [mockUserStories] = useState<UserStory[]>([
-    { id: '1', title: 'As a user, I want to authenticate with email and password, so that I can securely access the application', user: 'user', action: 'authenticate with email and password', value: 'securely access the application', status: 'Completed', priority: 'High', estimate: 5, projectId: 'mock-project-1', programId: 'mock-program-1', order: 1, createdAt: new Date(), updatedAt: new Date() },
-    { id: '2', title: 'As a user, I want to view a dashboard, so that I can see my project overview', user: 'user', action: 'view a dashboard', value: 'see my project overview', status: 'In Progress', priority: 'Medium', estimate: 3, projectId: 'mock-project-1', programId: 'mock-program-1', order: 2, createdAt: new Date(), updatedAt: new Date() },
-    { id: '3', title: 'As a developer, I want to integrate APIs, so that the application can connect to external services', user: 'developer', action: 'integrate APIs', value: 'application can connect to external services', status: 'Refined Backlog', priority: 'Critical', estimate: 8, projectId: 'mock-project-2', programId: 'mock-program-1', order: 1, createdAt: new Date(), updatedAt: new Date() },
-    { id: '4', title: 'As a tester, I want to create test cases, so that I can ensure application quality', user: 'tester', action: 'create test cases', value: 'ensure application quality', status: 'Testing', priority: 'Low', estimate: 4, projectId: 'mock-project-2', programId: 'mock-program-1', order: 2, createdAt: new Date(), updatedAt: new Date() },
-    { id: '5', title: 'As a writer, I want to document features, so that users can understand how to use the application', user: 'writer', action: 'document features', value: 'users can understand how to use the application', status: 'Backlog', priority: 'Medium', estimate: 6, projectId: 'mock-project-3', programId: 'mock-program-2', order: 1, createdAt: new Date(), updatedAt: new Date() },
-  ]);
 
 
 
   // Calculate program-level metrics
   const getTotalProjects = () => {
-    return programs.reduce((total, program) => total + (program.projects?.length || 0), 0);
+    return projects.length;
   };
 
+  const getTotalSprints = () => {
+    return sprints.length;
+  };
+
+  const getTotalEpics = () => {
+    return epics.length;
+  };
 
   const getOverallCompletion = () => {
-    // This would be calculated from actual project completion data
-    // For now, return a mock completion rate
-    return programs.length > 0 ? 65 : 0;
+    // Calculate actual completion rate from user stories
+    if (userStories.length === 0) return 0;
+    const completedStories = userStories.filter(story => story.status === 'Completed').length;
+    return Math.round((completedStories / userStories.length) * 100);
   };
 
   const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -46,39 +55,63 @@ export const Dashboard: React.FC = () => {
   // Project Management Metrics
   const getStatusCounts = () => {
     const counts = {
-      completed: mockUserStories.filter(s => s.status === 'Completed').length,
-      inProgress: mockUserStories.filter(s => s.status === 'In Progress').length,
-      refined: mockUserStories.filter(s => s.status === 'Refined Backlog').length,
-      testing: mockUserStories.filter(s => s.status === 'Testing').length,
-      productBacklog: mockUserStories.filter(s => s.status === 'Product Backlog').length,
+      backlog: userStories.filter(s => s.status === 'Product Backlog').length,
+      todo: userStories.filter(s => s.status === 'Refined Backlog').length,
+      inProgress: userStories.filter(s => s.status === 'In Progress').length,
+      testing: userStories.filter(s => s.status === 'Testing').length,
+      completed: userStories.filter(s => s.status === 'Completed').length,
     };
     return counts;
   };
 
   const getPriorityBreakdown = () => {
     const breakdown = {
-      critical: mockUserStories.filter(s => s.priority === 'Critical').length,
-      high: mockUserStories.filter(s => s.priority === 'High').length,
-      medium: mockUserStories.filter(s => s.priority === 'Medium').length,
-      low: mockUserStories.filter(s => s.priority === 'Low').length,
+      critical: userStories.filter(s => s.priority === 'Critical').length,
+      high: userStories.filter(s => s.priority === 'High').length,
+      medium: userStories.filter(s => s.priority === 'Medium').length,
+      low: userStories.filter(s => s.priority === 'Low').length,
     };
     return breakdown;
   };
 
   const getCompletionRate = () => {
-    const total = mockUserStories.length;
-    const completed = mockUserStories.filter(s => s.status === 'Completed').length;
+    const total = userStories.length;
+    const completed = userStories.filter(s => s.status === 'Completed').length;
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   };
 
   const getRecentActivities = () => {
-    // Mock recent activities - in real app this would come from actual activity logs
-    return [
-      { id: '1', type: 'standup', user: 'John Doe', action: 'Submitted daily standup', time: '2 hours ago', icon: <CheckCircle2 className="w-4 h-4" /> },
-      { id: '2', type: 'blocker', user: 'Jane Smith', action: 'Reported blocker: API timeout issues', time: '3 hours ago', icon: <AlertTriangle className="w-4 h-4" /> },
-      { id: '3', type: 'task', user: 'Mike Johnson', action: 'Moved "User Authentication" to Completed', time: '5 hours ago', icon: <Target className="w-4 h-4" /> },
-      { id: '4', type: 'standup', user: 'Sarah Williams', action: 'Submitted daily standup', time: '6 hours ago', icon: <CheckCircle2 className="w-4 h-4" /> },
-    ];
+    // Create activities from real data
+    const activities = [];
+
+    // Add recent responses as activities
+    responses.slice(-3).forEach(response => {
+      const user = users.find(u => u.id === response.userId);
+      if (user) {
+        activities.push({
+          id: `response-${response.id}`,
+          type: 'standup',
+          user: user.name,
+          action: `Submitted daily standup`,
+          time: response.date === today ? 'Today' : `${response.date}`,
+          icon: <CheckCircle2 className="w-4 h-4" />
+        });
+      }
+    });
+
+    // Add recent user stories as activities
+    userStories.slice(-3).reverse().forEach(story => {
+      activities.push({
+        id: `story-${story.id}`,
+        type: 'task',
+        user: 'System',
+        action: `Created story: "${story.title.substring(0, 50)}${story.title.length > 50 ? '...' : ''}"`,
+        time: story.updatedAt.toLocaleDateString(),
+        icon: <Target className="w-4 h-4" />
+      });
+    });
+
+    return activities.slice(0, 6);
   };
 
   const statusCounts = getStatusCounts();
@@ -151,9 +184,9 @@ export const Dashboard: React.FC = () => {
           <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center mb-4">
             <Clock className="w-[20px] h-[20px] text-purple-500" />
           </div>
-          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{programs.length}</div>
-          <div className="text-sm text-slate-600 font-medium">Total Programs</div>
-          <div className="text-xs text-slate-400 mt-1">across organization</div>
+          <div className="text-4xl font-bold text-slate-800 leading-none mb-2 tracking-tight">{getTotalSprints()}</div>
+          <div className="text-sm text-slate-600 font-medium">Total Sprints</div>
+          <div className="text-xs text-slate-400 mt-1">active sprint cycles</div>
         </div>
         <div className="card relative overflow-hidden p-6 border-b-[3px] border-b-green-500">
           <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center mb-4">
@@ -254,28 +287,28 @@ export const Dashboard: React.FC = () => {
           <div className="card-body">
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm">Product Backlog</span>
+                <span className="text-sm">Backlog</span>
                 <div className="flex items-center gap-2">
                   <div className="w-20 bg-slate-200 rounded-full h-2">
-                    <div className="bg-gray-500 h-2 rounded-full" style={{ width: `${(statusCounts.productBacklog / mockUserStories.length) * 100}%` }}></div>
+                    <div className="bg-gray-500 h-2 rounded-full" style={{ width: `${userStories.length > 0 ? (statusCounts.backlog / userStories.length) * 100 : 0}%` }}></div>
                   </div>
-                  <span className="text-sm font-medium w-8">{statusCounts.productBacklog}</span>
+                  <span className="text-sm font-medium w-8">{statusCounts.backlog}</span>
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm">Refined Backlog</span>
+                <span className="text-sm">To Do</span>
                 <div className="flex items-center gap-2">
                   <div className="w-20 bg-slate-200 rounded-full h-2">
-                    <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${(statusCounts.refined / mockUserStories.length) * 100}%` }}></div>
+                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${userStories.length > 0 ? (statusCounts.todo / userStories.length) * 100 : 0}%` }}></div>
                   </div>
-                  <span className="text-sm font-medium w-8">{statusCounts.refined}</span>
+                  <span className="text-sm font-medium w-8">{statusCounts.todo}</span>
                 </div>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm">In Progress</span>
                 <div className="flex items-center gap-2">
                   <div className="w-20 bg-slate-200 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${(statusCounts.inProgress / mockUserStories.length) * 100}%` }}></div>
+                    <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${userStories.length > 0 ? (statusCounts.inProgress / userStories.length) * 100 : 0}%` }}></div>
                   </div>
                   <span className="text-sm font-medium w-8">{statusCounts.inProgress}</span>
                 </div>
@@ -284,7 +317,7 @@ export const Dashboard: React.FC = () => {
                 <span className="text-sm">Testing</span>
                 <div className="flex items-center gap-2">
                   <div className="w-20 bg-slate-200 rounded-full h-2">
-                    <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${(statusCounts.testing / mockUserStories.length) * 100}%` }}></div>
+                    <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${userStories.length > 0 ? (statusCounts.testing / userStories.length) * 100 : 0}%` }}></div>
                   </div>
                   <span className="text-sm font-medium w-8">{statusCounts.testing}</span>
                 </div>
@@ -293,7 +326,7 @@ export const Dashboard: React.FC = () => {
                 <span className="text-sm">Completed</span>
                 <div className="flex items-center gap-2">
                   <div className="w-20 bg-slate-200 rounded-full h-2">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: `${(statusCounts.completed / mockUserStories.length) * 100}%` }}></div>
+                    <div className="bg-green-500 h-2 rounded-full" style={{ width: `${userStories.length > 0 ? (statusCounts.completed / userStories.length) * 100 : 0}%` }}></div>
                   </div>
                   <span className="text-sm font-medium w-8">{statusCounts.completed}</span>
                 </div>
