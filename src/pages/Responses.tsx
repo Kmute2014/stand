@@ -78,12 +78,19 @@ export const Responses: React.FC = () => {
     return filtered;
   }, [groupedResponses, selectedDate, searchTerm, selectedUser, users]);
 
-  // Calculate statistics for a date
+  // Calculate statistics for a date (excluding admin users)
   const getDateStats = (dateResponses: StandupResponse[]) => {
-    const total = dateResponses.length;
-    const blockers = dateResponses.filter(r => r.blockers.toLowerCase() !== 'no').length;
-    const avgMood = total > 0 ? (dateResponses.reduce((sum, r) => sum + r.mood.score, 0) / total).toFixed(1) : '0';
-    const completionRate = users.length > 0 ? Math.round((total / users.length) * 100) : 0;
+    // Filter out admin responses
+    const nonAdminResponses = dateResponses.filter(response => {
+      const user = users.find(u => u.id === response.userId);
+      return user && user.role !== 'Admin';
+    });
+
+    const total = nonAdminResponses.length;
+    const blockers = nonAdminResponses.filter(r => r.blockers.toLowerCase() !== 'no').length;
+    const avgMood = total > 0 ? (nonAdminResponses.reduce((sum, r) => sum + r.mood.score, 0) / total).toFixed(1) : '0';
+    const nonAdminUsers = users.filter(u => u.role !== 'Admin');
+    const completionRate = nonAdminUsers.length > 0 ? Math.round((total / nonAdminUsers.length) * 100) : 0;
 
     return { total, blockers, avgMood, completionRate };
   };

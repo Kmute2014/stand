@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Topbar } from './components/Topbar';
+import { Preloader } from './components/Preloader';
+import { PageTransition } from './components/PageTransition';
 import { useAppContext } from './store';
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -29,15 +31,22 @@ import { MissedStandupReminder } from './components/MissedStandupReminder';
 import { Toast } from './components/Toast';
 
 export default function App() {
-  const { currentPage } = useAppContext();
+  const { currentPage, currentUser } = useAppContext();
   const [user, setUser] = useState(auth.currentUser);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, setUser);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      // Add a small delay to show the preloader for a better experience
+      setTimeout(() => setIsLoading(false), 1500);
+    });
+    return unsubscribe;
   }, []);
 
-  if (!user) {
-    return <AuthPage />;
+  // Show preloader during initial load
+  if (isLoading || !user || !currentUser) {
+    return <Preloader />;
   }
 
   return (
@@ -46,15 +55,17 @@ export default function App() {
       <div className="main">
         <Topbar />
         <div className="content">
-          {currentPage === 'dashboard' && <Dashboard />}
-          {currentPage === 'projects' && <ProjectsPage />}
-          {currentPage === 'sprintboard' && <SprintBoard />}
-          {currentPage === 'responses' && <Responses />}
-          {currentPage === 'mood' && <TeamMood />}
-          {currentPage === 'users' && <UsersPage />}
-          {currentPage === 'schedule' && <SchedulePage />}
-          {currentPage === 'myhistory' && <MyHistory />}
-          {currentPage === 'settings' && <Settings />}
+          <PageTransition pageKey={currentPage}>
+            {currentPage === 'dashboard' && <Dashboard />}
+            {currentPage === 'projects' && <ProjectsPage />}
+            {currentPage === 'sprintboard' && <SprintBoard />}
+            {currentPage === 'responses' && <Responses />}
+            {currentPage === 'mood' && <TeamMood />}
+            {currentPage === 'users' && <UsersPage />}
+            {currentPage === 'schedule' && <SchedulePage />}
+            {currentPage === 'myhistory' && <MyHistory />}
+            {currentPage === 'settings' && <Settings />}
+          </PageTransition>
         </div>
       </div>
       <AddUserModal />

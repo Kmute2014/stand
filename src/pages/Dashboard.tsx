@@ -48,9 +48,19 @@ export const Dashboard: React.FC = () => {
   const pendingUsers = users.filter(u => u.status === 'Active' && !u.lastStandup?.includes('Today'));
   const activeBlockers = responses.filter(r => r.blockers.toLowerCase() !== 'no' && r.date === today);
 
-  // Calculate average mood
-  const moodSum = responses.reduce((acc, curr) => acc + curr.mood.score, 0);
-  const avgMood = responses.length > 0 ? (moodSum / responses.length).toFixed(1) : '—';
+  // Filter out admin responses
+  const getNonAdminResponses = () => {
+    return responses.filter(response => {
+      const user = users.find(u => u.id === response.userId);
+      return user && user.role !== 'Admin';
+    });
+  };
+
+  const nonAdminResponses = getNonAdminResponses();
+
+  // Calculate average mood (excluding admins)
+  const moodSum = nonAdminResponses.reduce((acc, curr) => acc + curr.mood.score, 0);
+  const avgMood = nonAdminResponses.length > 0 ? (moodSum / nonAdminResponses.length).toFixed(1) : '—';
 
   // Project Management Metrics
   const getStatusCounts = () => {
@@ -347,7 +357,7 @@ export const Dashboard: React.FC = () => {
           <div className="card-body">
             <div className="grid grid-cols-4 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{responses.length}</div>
+                <div className="text-2xl font-bold text-blue-600">{nonAdminResponses.length}</div>
                 <div className="text-xs text-slate-600">Submitted</div>
               </div>
               <div className="text-center">

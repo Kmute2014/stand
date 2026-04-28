@@ -5,6 +5,7 @@ import { Sprint, Epic, Project, UserStory } from '../types/project';
 import { EpicKanbanBoard } from '../components/EpicKanbanBoard';
 import { CreateUserStoryModal } from '../components/CreateUserStoryModal';
 import { EditUserStoryModal } from '../components/EditUserStoryModal';
+import { CardSkeleton, SkeletonLoader, Spinner, ButtonLoader } from '../components/Preloader';
 
 export const SprintBoard: React.FC = () => {
   const {
@@ -45,6 +46,19 @@ export const SprintBoard: React.FC = () => {
   const [editingEpic, setEditingEpic] = useState<Epic | null>(null);
   const [newComment, setNewComment] = useState('');
 
+  // Loading states
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreatingSprint, setIsCreatingSprint] = useState(false);
+  const [isCreatingEpic, setIsCreatingEpic] = useState(false);
+  const [isDeletingSprint, setIsDeletingSprint] = useState(false);
+  const [isDeletingEpic, setIsDeletingEpic] = useState(false);
+
+  // Simulate loading for better UX
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Filter sprints by selected project
   const projectSprints = selectedProject
     ? sprints.filter(sprint => sprint.projectId === selectedProject.id)
@@ -59,6 +73,7 @@ export const SprintBoard: React.FC = () => {
   const handleCreateSprint = async (sprintData: Omit<Sprint, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!selectedProject) return;
 
+    setIsCreatingSprint(true);
     try {
       await createSprint({
         ...sprintData,
@@ -71,12 +86,15 @@ export const SprintBoard: React.FC = () => {
       setSprintBoardModals({ showCreateSprintModal: false });
     } catch (error) {
       showToast('Failed to create sprint', 'red');
+    } finally {
+      setIsCreatingSprint(false);
     }
   };
 
   const handleCreateEpic = async (epicData: Omit<Epic, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!selectedSprint) return;
 
+    setIsCreatingEpic(true);
     try {
       await createEpic({
         ...epicData,
@@ -88,6 +106,8 @@ export const SprintBoard: React.FC = () => {
       setSprintBoardModals({ showCreateEpicModal: false });
     } catch (error) {
       showToast('Failed to create epic', 'red');
+    } finally {
+      setIsCreatingEpic(false);
     }
   };
 
@@ -165,11 +185,61 @@ export const SprintBoard: React.FC = () => {
   const handleUpdateUserStory = async (storyId: string, updates: any) => {
     try {
       await updateUserStory(storyId, updates);
+      showToast('User story updated successfully!', 'green');
     } catch (error) {
       showToast('Failed to update user story', 'red');
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header Skeleton */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center">
+                <div className="w-32 h-8 bg-gray-200 rounded animate-pulse"></div>
+                <div className="ml-4 w-48 h-4 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="w-32 h-4 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Skeleton */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Project Selection Skeleton */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+            <div className="w-48 h-6 bg-gray-200 rounded animate-pulse mb-4"></div>
+            <div className="w-full h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+          </div>
+
+          {/* Sprint Cards Skeleton */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="w-32 h-6 bg-gray-200 rounded animate-pulse"></div>
+              <div className="w-24 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(3)].map((_, i) => <CardSkeleton key={i} />)}
+            </div>
+          </div>
+
+          {/* Epic Cards Skeleton */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="w-48 h-6 bg-gray-200 rounded animate-pulse"></div>
+              <div className="w-24 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(2)].map((_, i) => <CardSkeleton key={i} />)}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -188,12 +258,7 @@ export const SprintBoard: React.FC = () => {
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     Active Project: <span className="font-medium text-gray-700">{selectedProject.name}</span>
                   </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    No project selected
-                  </span>
-                )}
+                ) : 'No project selected'}
               </div>
             </div>
           </div>
@@ -203,35 +268,31 @@ export const SprintBoard: React.FC = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
         {/* Project Selection */}
-        <div className="mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Select Project</label>
-                <p className="text-sm text-gray-600">Choose a project to view and manage its sprints and epics</p>
-              </div>
-              {projects.length === 0 && (
-                <div className="text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
-                  No projects available. Create a project first.
-                </div>
-              )}
-            </div>
-            <select
-              value={selectedProject?.id || ''}
-              onChange={(e) => {
-                const project = projects.find(p => p.id === e.target.value);
-                setSprintBoardModals({ selectedProject: project || null });
-                setSprintBoardModals({ selectedSprint: null });
-                setSprintBoardModals({ selectedEpic: null });
-              }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900"
-            >
-              <option value="">Choose a project...</option>
-              {projects.map(project => (
-                <option key={project.id} value={project.id}>{project.name}</option>
-              ))}
-            </select>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Select Project</label>
+            <p className="text-sm text-gray-600">Choose a project to view and manage its sprints and epics</p>
           </div>
+          {projects.length === 0 && (
+            <div className="text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+              No projects available. Create a project first.
+            </div>
+          )}
+          <select
+            value={selectedProject?.id || ''}
+            onChange={(e) => {
+              const project = projects.find(p => p.id === e.target.value);
+              setSprintBoardModals({ selectedProject: project || null });
+              setSprintBoardModals({ selectedSprint: null });
+              setSprintBoardModals({ selectedEpic: null });
+            }}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900"
+          >
+            <option value="">Choose a project...</option>
+            {projects.map(project => (
+              <option key={project.id} value={project.id}>{project.name}</option>
+            ))}
+          </select>
         </div>
 
         {selectedProject && (
@@ -244,13 +305,14 @@ export const SprintBoard: React.FC = () => {
                     <h2 className="text-xl font-bold text-gray-900 mb-1">Sprints</h2>
                     <p className="text-sm text-gray-600">Manage your project sprints and timelines</p>
                   </div>
-                  <button
+                  <ButtonLoader
+                    loading={isCreatingSprint}
                     onClick={() => setSprintBoardModals({ showCreateSprintModal: true })}
                     className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-sm"
                   >
                     <Plus className="w-4 h-4" />
                     Create Sprint
-                  </button>
+                  </ButtonLoader>
                 </div>
 
                 {projectSprints.length === 0 ? (
@@ -513,158 +575,162 @@ export const SprintBoard: React.FC = () => {
         )}
 
         {/* Create Sprint Modal */}
-        {showCreateSprintModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Create Sprint</h2>
-                <button
-                  onClick={() => setSprintBoardModals({ showCreateSprintModal: false })}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <span className="text-gray-400 text-xl">×</span>
-                </button>
-              </div>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                handleCreateSprint({
-                  name: formData.get('name') as string,
-                  description: formData.get('description') as string,
-                  startDate: new Date(formData.get('startDate') as string),
-                  endDate: new Date(formData.get('endDate') as string),
-                  projectId: selectedProject.id,
-                  programId: selectedProject.programId,
-                  epics: [],
-                  comments: []
-                });
-              }}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                    <input
-                      name="name"
-                      type="text"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea
-                      name="description"
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                    <input
-                      name="startDate"
-                      type="date"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                    <input
-                      name="endDate"
-                      type="date"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-3 mt-6">
+        {
+          showCreateSprintModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-gray-900">Create Sprint</h2>
                   <button
-                    type="button"
                     onClick={() => setSprintBoardModals({ showCreateSprintModal: false })}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Create Sprint
+                    <span className="text-gray-400 text-xl">×</span>
                   </button>
                 </div>
-              </form>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  handleCreateSprint({
+                    name: formData.get('name') as string,
+                    description: formData.get('description') as string,
+                    startDate: new Date(formData.get('startDate') as string),
+                    endDate: new Date(formData.get('endDate') as string),
+                    projectId: selectedProject.id,
+                    programId: selectedProject.programId,
+                    epics: [],
+                    comments: []
+                  });
+                }}>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <input
+                        name="name"
+                        type="text"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <textarea
+                        name="description"
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                      <input
+                        name="startDate"
+                        type="date"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                      <input
+                        name="endDate"
+                        type="date"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => setSprintBoardModals({ showCreateSprintModal: false })}
+                      className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Create Sprint
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
         {/* Create Epic Modal */}
-        {showCreateEpicModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h2 className="text-lg font-semibold mb-4">Create Epic</h2>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                handleCreateEpic({
-                  name: formData.get('name') as string,
-                  description: formData.get('description') as string,
-                  priority: formData.get('priority') as 'Low' | 'Medium' | 'High' | 'Critical',
-                  status: 'Refined Backlog',
-                  projectId: selectedProject.id,
-                  programId: selectedProject.programId,
-                  sprintId: selectedSprint.id
-                });
-              }}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                    <input
-                      name="name"
-                      type="text"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
+        {
+          showCreateEpicModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <h2 className="text-lg font-semibold mb-4">Create Epic</h2>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  handleCreateEpic({
+                    name: formData.get('name') as string,
+                    description: formData.get('description') as string,
+                    priority: formData.get('priority') as 'Low' | 'Medium' | 'High' | 'Critical',
+                    status: 'Refined Backlog',
+                    projectId: selectedProject.id,
+                    programId: selectedProject.programId,
+                    sprintId: selectedSprint.id
+                  });
+                }}>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <input
+                        name="name"
+                        type="text"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <textarea
+                        name="description"
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                      <select
+                        name="priority"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                      </select>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea
-                      name="description"
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                    <select
-                      name="priority"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  <div className="flex justify-end gap-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => setSprintBoardModals({ showCreateEpicModal: false })}
+                      className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                     >
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                      <option value="Critical">Critical</option>
-                    </select>
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      Create Epic
+                    </button>
                   </div>
-                </div>
-                <div className="flex justify-end gap-3 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setSprintBoardModals({ showCreateEpicModal: false })}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    Create Epic
-                  </button>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
         {/* Create User Story Modal */}
         <CreateUserStoryModal
@@ -684,6 +750,6 @@ export const SprintBoard: React.FC = () => {
         />
 
       </div>
-    </div>
+    </div >
   );
 };

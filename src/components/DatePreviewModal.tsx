@@ -29,11 +29,16 @@ export const DatePreviewModal: React.FC<DatePreviewModalProps> = ({
     r.date === selectedDate
   );
 
-  // Calculate statistics
-  const totalResponses = dateResponses.length;
-  const blockersCount = dateResponses.filter(r => r.blockers.toLowerCase() !== 'no').length;
+  // Calculate statistics (excluding admin users)
+  const nonAdminResponses = dateResponses.filter(response => {
+    const user = users.find(u => u.id === response.userId);
+    return user && user.role !== 'Admin';
+  });
+
+  const totalResponses = nonAdminResponses.length;
+  const blockersCount = nonAdminResponses.filter(r => r.blockers.toLowerCase() !== 'no').length;
   const avgMood = totalResponses > 0
-    ? (dateResponses.reduce((sum, r) => sum + r.mood.score, 0) / totalResponses).toFixed(1)
+    ? (nonAdminResponses.reduce((sum, r) => sum + r.mood.score, 0) / totalResponses).toFixed(1)
     : '0';
 
   return (
@@ -88,7 +93,7 @@ export const DatePreviewModal: React.FC<DatePreviewModalProps> = ({
                 <span className="text-sm font-medium">Completion Rate</span>
               </div>
               <div className="text-2xl font-bold text-gray-900">
-                {totalResponses > 0 ? Math.round((totalResponses / users.length) * 100) : 0}%
+                {totalResponses > 0 ? Math.round((totalResponses / users.filter(u => u.role !== 'Admin').length) * 100) : 0}%
               </div>
             </div>
           </div>
