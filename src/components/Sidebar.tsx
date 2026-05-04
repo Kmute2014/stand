@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../store';
-import { LayoutDashboard, MessageSquare, Smile, Users, Clock, Edit3, History, LogOut, Settings, Lock, KanbanSquare, Menu, X } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Smile, Users, Clock, Edit3, History, LogOut, Settings, Lock, KanbanSquare, Menu, X, Bot } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 
@@ -23,6 +23,11 @@ export const Sidebar: React.FC = () => {
       group: 'Project Management', items: [
         { id: 'projects', label: 'Projects', icon: <KanbanSquare className="w-4 h-4 opacity-80 current-icon" /> },
         { id: 'sprintboard', label: 'Sprint Board', icon: <KanbanSquare className="w-4 h-4 opacity-80 current-icon" /> },
+      ]
+    },
+    {
+      group: 'AI Assistant', items: [
+        { id: 'ai-agent', label: 'AI Assistant', icon: <Bot className="w-4 h-4 opacity-80 current-icon" />, special: true },
       ]
     },
     {
@@ -89,10 +94,16 @@ export const Sidebar: React.FC = () => {
                   <div
                     key={item.id}
                     onClick={() => {
-                      setCurrentPage(item.id);
+                      if (item.id === 'ai-agent') {
+                        // Trigger AI Agent modal
+                        const event = new CustomEvent('openAIAgent');
+                        window.dispatchEvent(event);
+                      } else {
+                        setCurrentPage(item.id);
+                      }
                       setIsMobileMenuOpen(false);
                     }}
-                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors mb-1 ${isActive ? 'bg-blue-600 text-white font-medium' : isLocked ? 'text-slate-600 hover:bg-slate-800/50' : 'text-slate-400 hover:bg-slate-800'}`}
+                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors mb-1 ${item.id === 'ai-agent' ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium' : isActive ? 'bg-blue-600 text-white font-medium' : isLocked ? 'text-slate-600 hover:bg-slate-800/50' : 'text-slate-400 hover:bg-slate-800'}`}
                   >
                     <div className={`${isActive ? 'opacity-80' : isLocked ? 'opacity-30' : 'opacity-60'}`}>
                       {item.icon}
