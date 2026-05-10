@@ -30,6 +30,7 @@ import { EditProjectModal } from './components/EditProjectModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MissedStandupReminder } from './components/MissedStandupReminder';
 import { Toast } from './components/Toast';
+import { ReportSidebar } from './components/ReportSidebar';
 
 export default function App() {
   const { currentPage, currentUser } = useAppContext();
@@ -52,9 +53,13 @@ export default function App() {
     return () => window.removeEventListener('openAIAgent', handleOpenAIAgent);
   }, []);
 
-  // Show preloader during initial load
-  if (isLoading || !user || !currentUser) {
+  // Show preloader during initial load, but show auth page if not authenticated
+  if (isLoading) {
     return <Preloader />;
+  }
+
+  if (!user || !currentUser) {
+    return <AuthPage />;
   }
 
   return (
@@ -91,6 +96,7 @@ export default function App() {
       <MissedStandupReminder />
       <Toast />
       <AIAgent isOpen={isAIAgentOpen} onClose={() => setIsAIAgentOpen(false)} />
+      <ReportSidebar />
     </div>
   );
 }
