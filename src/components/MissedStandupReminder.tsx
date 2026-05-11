@@ -16,6 +16,11 @@ export const MissedStandupReminder: React.FC = () => {
   const getMissedDays = () => {
     if (!currentUser || !schedule.activeDays.length) return [];
 
+    // Admin users should not be tracked for missed standups
+    if (currentUser.role === 'Admin') {
+      return [];
+    }
+
     const missedDays = [];
     const today = new Date();
     const tenDaysAgo = new Date(today);
