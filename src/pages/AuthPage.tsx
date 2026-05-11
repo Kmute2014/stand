@@ -28,9 +28,27 @@ export const AuthPage: React.FC = () => {
 
     try {
       if (mode === 'reset') {
-        await sendPasswordResetEmail(auth, email);
-        setMessage('Check your inbox! A reset link has been sent.');
+        if (!email) {
+          setError('Please enter your email address.');
+          return;
+        }
+
+        console.log('Attempting password reset for email:', email);
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          setError('Please enter a valid email address.');
+          return;
+        }
+
+        await sendPasswordResetEmail(auth, email, {
+          url: window.location.origin + '/reset-password',
+          handleCodeInApp: true,
+        });
+        setMessage('Check your inbox! A reset link has been sent to your email.');
         setMode('login');
+        console.log('Password reset email sent successfully');
       } else {
         // Domain Check for Sign Up
         if (mode === 'signup' && !email.endsWith(`@${ALLOWED_DOMAIN}`)) {
@@ -45,7 +63,20 @@ export const AuthPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Auth error:', err);
-      setError(err.message.replace('Firebase:', ''));
+
+      if (mode === 'reset') {
+        if (err.code === 'auth/user-not-found') {
+          setError('No account found with this email address.');
+        } else if (err.code === 'auth/invalid-email') {
+          setError('Invalid email address format.');
+        } else if (err.code === 'auth/too-many-requests') {
+          setError('Too many requests. Try again later.');
+        } else {
+          setError(err.message.replace('Firebase:', '') || 'Failed to send reset email. Please try again.');
+        }
+      } else {
+        setError(err.message.replace('Firebase:', ''));
+      }
     } finally {
       setLoading(false);
     }
