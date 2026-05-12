@@ -361,7 +361,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const sendReminders = async (userIds?: string[]) => {
     try {
       const { httpsCallable } = await import('firebase/functions');
-      const { functions } = await import('../lib/firebase');
+      const { functions } = await import('./lib/firebase');
 
       const sendReminderFunction = httpsCallable(functions, 'sendStandupReminder');
       const result = await sendReminderFunction({ userIds: userIds || [] });

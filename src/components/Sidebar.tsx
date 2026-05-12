@@ -42,6 +42,7 @@ export const Sidebar: React.FC = () => {
         { id: 'myhistory', label: 'My History', icon: <History className="w-4 h-4 opacity-80 current-icon" /> },
         { id: 'responses', label: 'Responses', icon: <MessageSquare className="w-4 h-4 opacity-80 current-icon" />, badge: '3' },
         { id: 'mood', label: 'Team Mood', icon: <Smile className="w-4 h-4 opacity-80 current-icon" /> },
+        { id: 'reports', label: 'Reports', icon: <Edit3 className="w-4 h-4 opacity-80 current-icon" /> },
       ]
     },
     {

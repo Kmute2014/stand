@@ -15,6 +15,7 @@ import { TeamMood } from './pages/TeamMood';
 import { UsersPage } from './pages/Users';
 import { SchedulePage } from './pages/Schedule';
 import { MyHistory } from './pages/MyHistory';
+import { Reports } from './pages/Reports';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { SprintBoard } from './pages/SprintBoard';
 import { Settings } from './components/Settings';
@@ -30,7 +31,6 @@ import { EditProjectModal } from './components/EditProjectModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MissedStandupReminder } from './components/MissedStandupReminder';
 import { Toast } from './components/Toast';
-import { ReportSidebar } from './components/ReportSidebar';
 
 export default function App() {
   const { currentPage, currentUser } = useAppContext();
@@ -77,6 +77,7 @@ export default function App() {
             {currentPage === 'users' && <UsersPage />}
             {currentPage === 'schedule' && <SchedulePage />}
             {currentPage === 'myhistory' && <MyHistory />}
+            {currentPage === 'reports' && <Reports />}
             {currentPage === 'settings' && <Settings />}
           </PageTransition>
         </div>
@@ -89,14 +90,13 @@ export default function App() {
         <CreateProjectModal />
       </ErrorBoundary>
       <ErrorBoundary>
-        <CreateUserStoryModal />
+        <CreateUserStoryModal isOpen={false} onClose={() => { }} />
       </ErrorBoundary>
       <EditProgramModal />
       <EditProjectModal />
       <MissedStandupReminder />
       <Toast />
       <AIAgent isOpen={isAIAgentOpen} onClose={() => setIsAIAgentOpen(false)} />
-      <ReportSidebar />
     </div>
   );
 }
