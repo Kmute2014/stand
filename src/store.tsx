@@ -360,20 +360,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // 7. Action: Send Reminders (Manual Trigger)
   const sendReminders = async (userIds?: string[]) => {
     try {
-      const resp = await fetch('/.netlify/functions/send-reminder', {
-        method: 'POST',
-        body: JSON.stringify({ userIds: userIds || [] }),
-      });
-      if (resp.ok) {
-        showToast('Reminders dispatched successfully.', 'green');
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('../lib/firebase');
+
+      const sendReminderFunction = httpsCallable(functions, 'sendStandupReminder');
+      const result = await sendReminderFunction({ userIds: userIds || [] });
+
+      if (result.data?.success) {
+        showToast(result.data.message || 'Reminders dispatched successfully.', 'green');
         setNotifications(prev => [{
           id: Date.now().toString(),
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: 'Manual',
-          text: `Reminders sent by admin.`
+          text: result.data.message || `Reminders sent by admin.`
         }, ...prev]);
       }
-    } catch (err) { showToast('Error triggering reminders.', 'red'); }
+    } catch (err: any) {
+      console.error('Error sending reminders:', err);
+      showToast(err.message || 'Error triggering reminders.', 'red');
+    }
   };
 
   // Generic Handlers

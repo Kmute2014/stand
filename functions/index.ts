@@ -57,20 +57,64 @@ export const scheduledStandupReminder = functions.scheduler.onSchedule(
   async (event) => {
     const now = new Date();
     const current = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' });
 
     const scheduleDoc = await db.collection('settings').doc('schedule').get();
+    const scheduleData = scheduleDoc.data();
 
-    // Check time equality
-    if (scheduleDoc.data()?.time === current) {
-      const usersSnap = await db.collection('users').where('status', '==', 'Pending').get();
+    // Check if auto reminders are enabled
+    if (!scheduleData?.autoEnabled) {
+      return;
+    }
 
+    // Check if current time matches scheduled time AND current day is an active day
+    if (scheduleData?.time === current && scheduleData?.activeDays?.includes(currentDay)) {
+      console.log(`Sending reminders at ${current} on ${currentDay}`);
+
+      // Get all active users (excluding admins)
+      const usersSnap = await db.collection('users')
+        .where('status', '==', 'Active')
+        .where('role', '!=', 'Admin')
+        .get();
+
+      // Check which users haven't submitted today's standup
+      const today = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const responsesSnap = await db.collection('responses')
+        .where('date', '==', today)
+        .get();
+
+      const submittedUserIds = new Set(responsesSnap.docs.map(doc => doc.data().userId));
+
+      let emailsSent = 0;
       for (const doc of usersSnap.docs) {
-        await sendBrevoEmail(
-          doc.data().email,
-          "Daily Standup Reminder",
-          "Hello! It's time to submit your daily standup on StandUpPhelo."
-        );
+        const userData = doc.data();
+
+        // Only send to users who haven't submitted today
+        if (!submittedUserIds.has(doc.id)) {
+          try {
+            await sendBrevoEmail(
+              userData.email,
+              "Daily Standup Reminder",
+              `Hello ${userData.name}! It's time to submit your daily standup on StandUpPhelo. Click here to submit: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`
+            );
+            emailsSent++;
+            console.log(`Reminder sent to ${userData.email}`);
+          } catch (error) {
+            console.error(`Failed to send reminder to ${userData.email}:`, error);
+          }
+        }
       }
+
+      // Log the reminder activity
+      await db.collection('notifications').add({
+        id: Date.now().toString(),
+        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'Auto',
+        text: `Automatic reminders sent to ${emailsSent} users on ${currentDay} at ${current}`,
+        createdAt: now.toISOString()
+      });
+
+      console.log(`Automatic reminders completed: ${emailsSent} emails sent`);
     }
   }
 );
@@ -80,23 +124,43 @@ export const sendStandupReminder = functions.https.onCall(
   { region: 'europe-west2' },
   async (request) => {
     try {
-      const usersSnap = await db.collection('users').where('status', '==', 'Pending').get();
+      const now = new Date();
+      const today = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+      // Get all active users (excluding admins)
+      const usersSnap = await db.collection('users')
+        .where('status', '==', 'Active')
+        .where('role', '!=', 'Admin')
+        .get();
 
       if (usersSnap.empty) {
-        return { success: true, message: 'No pending users to remind' };
+        return { success: true, message: 'No active users to remind' };
       }
+
+      // Check which users haven't submitted today's standup
+      const responsesSnap = await db.collection('responses')
+        .where('date', '==', today)
+        .get();
+
+      const submittedUserIds = new Set(responsesSnap.docs.map(doc => doc.data().userId));
 
       let emailsSent = 0;
       for (const doc of usersSnap.docs) {
-        try {
-          await sendBrevoEmail(
-            doc.data().email,
-            "Daily Standup Reminder",
-            "Hello! It's time to submit your daily standup on StandUpPhelo."
-          );
-          emailsSent++;
-        } catch (error) {
-          console.error(`Failed to send reminder to ${doc.data().email}:`, error);
+        const userData = doc.data();
+
+        // Only send to users who haven't submitted today
+        if (!submittedUserIds.has(doc.id)) {
+          try {
+            await sendBrevoEmail(
+              userData.email,
+              "Daily Standup Reminder",
+              `Hello ${userData.name}! It's time to submit your daily standup on StandUpPhelo. Click here to submit: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`
+            );
+            emailsSent++;
+            console.log(`Manual reminder sent to ${userData.email}`);
+          } catch (error) {
+            console.error(`Failed to send manual reminder to ${userData.email}:`, error);
+          }
         }
       }
 
