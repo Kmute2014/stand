@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../store';
-import { LayoutDashboard, MessageSquare, Smile, Users, Clock, Edit3, History, LogOut, Settings, Lock, KanbanSquare, Menu, X, Bot } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Smile, Users, Clock, Edit3, History, LogOut, Settings, Lock, KanbanSquare, Menu, X } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 
@@ -23,11 +23,6 @@ export const Sidebar: React.FC = () => {
       group: 'Project Management', items: [
         { id: 'projects', label: 'Projects', icon: <KanbanSquare className="w-4 h-4 opacity-80 current-icon" /> },
         { id: 'sprintboard', label: 'Sprint Board', icon: <KanbanSquare className="w-4 h-4 opacity-80 current-icon" /> },
-      ]
-    },
-    {
-      group: 'AI Assistant', items: [
-        { id: 'ai-agent', label: 'AI Assistant', icon: <Bot className="w-4 h-4 opacity-80 current-icon" />, special: true },
       ]
     },
     {
@@ -79,7 +74,7 @@ export const Sidebar: React.FC = () => {
               P
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Project Phelo</h1>
+              <h1 className="text-xl font-bold tracking-tight">StandUpPhelo</h1>
             </div>
           </div>
         </div>

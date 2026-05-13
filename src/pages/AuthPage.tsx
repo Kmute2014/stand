@@ -90,7 +90,7 @@ export const AuthPage: React.FC = () => {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 mb-4 shadow-lg">
             <Lock className="text-white w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Project Phelo</h1>
+          <h1 className="text-2xl font-bold text-white">StandUpPhelo</h1>
         </div>
 
         <form onSubmit={handleAuth} className="bg-white rounded-2xl shadow-2xl p-8 border border-slate-200">

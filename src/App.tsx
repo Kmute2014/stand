@@ -3,7 +3,6 @@ import { Sidebar } from './components/Sidebar';
 import { Topbar } from './components/Topbar';
 import { Preloader } from './components/Preloader';
 import { PageTransition } from './components/PageTransition';
-import { AIAgent } from './components/AIAgent';
 import { useAppContext } from './store';
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -36,7 +35,6 @@ export default function App() {
   const { currentPage, currentUser } = useAppContext();
   const [user, setUser] = useState(auth.currentUser);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAIAgentOpen, setIsAIAgentOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -45,12 +43,6 @@ export default function App() {
       setTimeout(() => setIsLoading(false), 1500);
     });
     return unsubscribe;
-  }, []);
-
-  useEffect(() => {
-    const handleOpenAIAgent = () => setIsAIAgentOpen(true);
-    window.addEventListener('openAIAgent', handleOpenAIAgent);
-    return () => window.removeEventListener('openAIAgent', handleOpenAIAgent);
   }, []);
 
   // Show preloader during initial load, but show auth page if not authenticated
@@ -96,7 +88,6 @@ export default function App() {
       <EditProjectModal />
       <MissedStandupReminder />
       <Toast />
-      <AIAgent isOpen={isAIAgentOpen} onClose={() => setIsAIAgentOpen(false)} />
     </div>
   );
 }
