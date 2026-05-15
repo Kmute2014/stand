@@ -17,6 +17,7 @@ import { MyHistory } from './pages/MyHistory';
 import { Reports } from './pages/Reports';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { SprintBoard } from './pages/SprintBoard';
+import { JiraPage } from './pages/JiraPage';
 import { Settings } from './components/Settings';
 import { AuthPage } from './pages/AuthPage';
 import { AddUserModal } from './components/AddUserModal';
@@ -64,6 +65,7 @@ export default function App() {
             {currentPage === 'dashboard' && <Dashboard />}
             {currentPage === 'projects' && <ProjectsPage />}
             {currentPage === 'sprintboard' && <SprintBoard />}
+            {currentPage === 'jira' && <JiraPage />}
             {currentPage === 'responses' && <Responses />}
             {currentPage === 'mood' && <TeamMood />}
             {currentPage === 'users' && <UsersPage />}
